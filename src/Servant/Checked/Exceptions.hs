@@ -12,6 +12,7 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Servant.Checked.Exceptions where
 
@@ -327,13 +328,20 @@ instance ToJSON BarErr where
   toJSON :: BarErr -> Value
   toJSON = toJSON . show
 
+data BazErr = BazErr deriving (Eq, Read, Show)
+
+instance ToJSON BazErr where
+  toJSON :: BazErr -> Value
+  toJSON = toJSON . show
+
 --------------
 -- Envelope --
 --------------
 
-data Envelope' e a = ErrEnvelope e | SuccEnvelope a
+-- data Envelope' e a = ErrEnvelope e | SuccEnvelope a
+-- type Envelope e = Envelope' (OpenUnion e)
 
-type Envelope e = Envelope' (OpenUnion e)
+data Envelope e a = ErrEnvelope (OpenUnion e) | SuccEnvelope a
 
 toErrEnvelope :: IsMember e es => e -> Envelope es a
 toErrEnvelope = ErrEnvelope . openUnionLift
@@ -351,4 +359,3 @@ instance (ToJSON (OpenUnion e), ToJSON a) => ToJSON (Envelope e a) where
   toJSON :: Envelope e a -> Value
   toJSON (ErrEnvelope e) = object ["err" .= e]
   toJSON (SuccEnvelope a) = object ["data" .= a]
-
