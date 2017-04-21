@@ -20,6 +20,7 @@ module Servant.Checked.Exceptions where
 -- Imports for Union stuff
 import Control.Lens (Prism, Prism', iso, preview, prism, prism', review)
 import Data.Functor.Identity (Identity(Identity, runIdentity))
+import GHC.TypeLits (Nat, type (+))
 
 -- Imports for Servant Stuff
 import Data.Aeson (ToJSON(toJSON), Value, (.=), object)
@@ -96,18 +97,10 @@ testGetFromOpenUnion2 = matchOpenUnion testOpenUnion
 -- This is from Data.Vinyl.TypeLevel --
 ---------------------------------------
 
-
--- TODO: Can we just use real GHC type-level natrual numbers?
-
-
--- | A mere approximation of the natural numbers. And their image as lifted by
--- @-XDataKinds@ corresponds to the actual natural numbers.
-data Nat = Z | S !Nat
-
 -- | A partial relation that gives the index of a value in a list.
 type family RIndex (r :: k) (rs :: [k]) :: Nat where
-  RIndex r (r ': rs) = 'Z
-  RIndex r (s ': rs) = 'S (RIndex r rs)
+  RIndex r (r ': rs) = 0
+  RIndex r (s ': rs) = 1 + (RIndex r rs)
 
 -- | A partial relation that gives the indices of a sublist in a larger list.
 type family RImage (rs :: [k]) (ss :: [k]) :: [Nat] where
@@ -162,12 +155,13 @@ class i ~ RIndex a as => UElem (a :: u) (as :: [u]) (i :: Nat) where
   umatch :: Union f as -> Maybe (f a)
   umatch = preview uprism
 
-instance UElem a (a ': as) 'Z where
+instance UElem a (a ': as) 0 where
   uprism :: Prism' (Union f (a ': as)) (f a)
   uprism = _This
   {-# INLINE uprism #-}
 
-instance (RIndex a (b ': as) ~ 'S i, UElem a as i) => UElem a (b ': as) ('S i) where
+instance {-# OVERLAPPABLE #-} (RIndex a (b ': as) ~ n, UElem a as i, n ~ (1 + i))
+    => UElem a (b ': as) n where
   uprism :: Prism' (Union f (b ': as)) (f a)
   uprism = _That . uprism
   {-# INLINE uprism #-}
