@@ -166,29 +166,6 @@ instance {-# OVERLAPPABLE #-} (RIndex a (b ': as) ~ n, UElem a as i, n ~ (1 + i)
   uprism = _That . uprism
   {-# INLINE uprism #-}
 
--- class is ~ RImage as bs => USubset (as :: [u]) (bs :: [u]) is where
---   {-# MINIMAL usubset | urelax, urestrict #-}
-
---   usubset :: Prism' (Union f bs) (Union f as)
---   usubset = prism' urelax urestrict
-
---   urelax :: Union f as -> Union f bs
---   urelax = review usubset
-
---   urestrict :: Union f bs -> Maybe (Union f as)
---   urestrict = preview usubset
-
--- instance USubset '[] bs '[] where
---   urelax = absurdUnion
---   urestrict _ = Nothing
-
--- instance
---     ( UElem a bs i
---     , USubset as bs is
---     ) => USubset (a ': as) bs (i ': is) where
---   urelax = union urelax ulift
---   urestrict ubs = This <$> umatch ubs <|> That <$> urestrict ubs
-
 type OpenUnion = Union Identity
 
 openUnion :: forall a as . UElem a as (RIndex a as) => Prism' (OpenUnion as) a
