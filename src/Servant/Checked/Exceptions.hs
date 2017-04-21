@@ -251,6 +251,13 @@ instance (ToJSON (f a), ToJSON (Union f as)) => ToJSON (Union f (a ': as)) where
   toJSON :: Union f (a ': as) -> Value
   toJSON = union toJSON toJSON
 
+-- instance
+--     ( Show (f a)
+--     , Show (Union f as)
+--     ) => Show (Union f (a ': as))
+--   where
+--     showsPrec n = union (showsPrec n) (showsPrec n)
+
 -- instance f ~ Identity => Exception (Union f '[])
 
 -- instance
