@@ -27,15 +27,12 @@ library
                      -- , Servant.Static.TH.Internal.Server
                      -- , Servant.Static.TH.Internal.Util
   build-depends:       base >= 4.8 && < 5
-                     -- , bytestring
-                     -- , containers
-                     -- , http-media
-                     -- , semigroups
                      , lens
+                     , natural-transformation
                      , servant >= 0.8
                      , servant-server >= 0.8
-                     -- , template-haskell
-                     -- , text
+                     , wai
+                     , warp
   default-language:    Haskell2010
   ghc-options:         -Wall -fwarn-incomplete-uni-patterns -fwarn-incomplete-record-updates -fwarn-monomorphism-restriction
   other-extensions:    QuasiQuotes

@@ -13,8 +13,21 @@
 
 module Servant.Checked.Exceptions where
 
+-- Imports for Union stuff
 import Control.Lens (Prism, Prism', iso, preview, prism, prism', review)
 import Data.Functor.Identity (Identity(Identity, runIdentity))
+
+-- Imports for Servant Stuff
+import Data.Proxy (Proxy(Proxy))
+import Network.Wai (Application)
+import Network.Wai.Handler.Warp (run)
+import Servant
+       (Get, Handler, JSON, Post, Server, ServerT, (:>), (:<|>)((:<|>)),
+        enter, serve)
+
+-- This changes in servant-0.10
+-- import Control.Natural ((:~>)(NT))
+import Servant.Utils.Enter ((:~>)(Nat))
 
 -- ghci> let a = openUnion # (5 :: Int) :: OpenUnion '[Bool, Int]
 
@@ -242,3 +255,41 @@ instance
 --       where
 --         matchR = This . Identity <$> fromException sE
 --         matchL = That <$> fromException sE
+
+-------------
+-- Servant --
+-------------
+
+defaultMainApi :: IO ()
+defaultMainApi = run 8201 app
+
+type Api = ApiSearch :<|> ApiStatus
+
+type ApiSearch = "search" :> Post '[JSON] String
+
+type ApiStatus = "status" :> Get '[JSON] Int
+
+serverRoot :: ServerT Api Handler
+serverRoot = search :<|> status
+
+-- search :: Handler (Envelope '[TwitterError, SomeOtherErr] (SearchResult [Status]))
+search :: Handler String
+search = do
+  pure "hello"
+
+status :: Handler Int
+status = pure 1
+
+-- | Given a 'Config', this returns a Wai 'Application'.
+app :: Application
+app = serve (Proxy :: Proxy Api) apiServer
+
+-- | Given a 'Config', this returns a servant 'Server' for 'Api'
+apiServer :: Server Api
+apiServer = enter natTrans serverRoot
+  where
+    natTrans :: Handler :~> Handler
+    natTrans = Nat trans
+
+    trans :: forall a. Handler a -> Handler a
+    trans = id
