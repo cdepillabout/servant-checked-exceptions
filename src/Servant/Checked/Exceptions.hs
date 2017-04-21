@@ -1,3 +1,4 @@
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE EmptyCase #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -6,6 +7,7 @@
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -18,12 +20,13 @@ import Control.Lens (Prism, Prism', iso, preview, prism, prism', review)
 import Data.Functor.Identity (Identity(Identity, runIdentity))
 
 -- Imports for Servant Stuff
+import Data.Aeson (ToJSON(toJSON), Value, (.=), object)
 import Data.Proxy (Proxy(Proxy))
 import Network.Wai (Application)
 import Network.Wai.Handler.Warp (run)
 import Servant
-       (Get, Handler, JSON, Post, Server, ServerT, (:>), (:<|>)((:<|>)),
-        enter, serve)
+       (Get, Handler, JSON, Post, QueryParam, Server, ServerT, (:>),
+        (:<|>)((:<|>)), enter, serve)
 
 -- This changes in servant-0.10
 -- import Control.Natural ((:~>)(NT))
@@ -76,7 +79,7 @@ testOpenUnion :: OpenUnion '[String, Int]
 testOpenUnion = review openUnion (3 :: Int)
 
 testOpenUnion2 :: OpenUnion '[String, Int]
-testOpenUnion2 = review openUnion "hello"
+testOpenUnion2 = review openUnion ("hello" :: String)
 
 testGetFromOpenUnion :: Maybe Int
 testGetFromOpenUnion = matchOpenUnion testOpenUnion
@@ -196,6 +199,11 @@ openUnion = uprism . iso runIdentity Identity
 matchOpenUnion :: forall a as . UElem a as (RIndex a as) => OpenUnion as -> Maybe a
 matchOpenUnion = preview openUnion
 
+openUnionLift :: UElem a as (RIndex a as) => a -> OpenUnion as
+openUnionLift = review openUnion
+
+type IsMember a as = UElem a as (RIndex a as)
+
 -- instance NFData (Union f '[]) where
 --   rnf = absurdUnion
 
@@ -209,21 +217,13 @@ matchOpenUnion = preview openUnion
 instance Show (Union f '[]) where
   showsPrec _ = absurdUnion
 
-instance
-    ( Show (f a)
-    , Show (Union f as)
-    ) => Show (Union f (a ': as))
-  where
+instance (Show (f a), Show (Union f as)) => Show (Union f (a ': as)) where
     showsPrec n = union (showsPrec n) (showsPrec n)
 
 instance Eq (Union f '[]) where
   (==) = absurdUnion
 
-instance
-    ( Eq (f a)
-    , Eq (Union f as)
-    ) => Eq (Union f (a ': as))
-  where
+instance (Eq (f a), Eq (Union f as)) => Eq (Union f (a ': as)) where
     This a1 == This a2 = a1 == a2
     That u1 == That u2 = u1 == u2
     _       == _       = False
@@ -231,15 +231,27 @@ instance
 instance Ord (Union f '[]) where
   compare = absurdUnion
 
-instance
-    ( Ord (f a)
-    , Ord (Union f as)
-    ) => Ord (Union f (a ': as))
+instance (Ord (f a), Ord (Union f as)) => Ord (Union f (a ': as))
   where
     compare (This a1) (This a2) = compare a1 a2
     compare (That u1) (That u2) = compare u1 u2
     compare (This _)  (That _)  = LT
     compare (That _)  (This _)  = GT
+
+instance ToJSON (Union f '[]) where
+  toJSON :: Union f '[] -> Value
+  toJSON = absurdUnion
+
+instance (ToJSON (f a), ToJSON (Union f as)) => ToJSON (Union f (a ': as)) where
+  toJSON :: Union f (a ': as) -> Value
+  toJSON = union toJSON toJSON
+
+-- instance
+--     ( Show (f a)
+--     , Show (Union f as)
+--     ) => Show (Union f (a ': as))
+--   where
+--     showsPrec n = union (showsPrec n) (showsPrec n)
 
 -- instance f ~ Identity => Exception (Union f '[])
 
@@ -265,17 +277,22 @@ defaultMainApi = run 8201 app
 
 type Api = ApiSearch :<|> ApiStatus
 
-type ApiSearch = "search" :> Post '[JSON] String
+type ApiSearch =
+  "search" :>
+  QueryParam "q" String :>
+  Post '[JSON] (Envelope '[FooErr, BarErr] String)
 
 type ApiStatus = "status" :> Get '[JSON] Int
 
 serverRoot :: ServerT Api Handler
 serverRoot = search :<|> status
 
--- search :: Handler (Envelope '[TwitterError, SomeOtherErr] (SearchResult [Status]))
-search :: Handler String
-search = do
-  pure "hello"
+search :: Maybe String -> Handler (Envelope '[FooErr, BarErr] String)
+search maybeQ = do
+  case maybeQ of
+    Just "hello" -> pureErrEnvelope BarErr
+    Just "Hello" -> pureSuccEnvelope "good"
+    _ -> pureErrEnvelope FooErr
 
 status :: Handler Int
 status = pure 1
@@ -293,3 +310,45 @@ apiServer = enter natTrans serverRoot
 
     trans :: forall a. Handler a -> Handler a
     trans = id
+
+------------
+-- Errors --
+------------
+
+data FooErr = FooErr deriving (Eq, Read, Show)
+
+instance ToJSON FooErr where
+  toJSON :: FooErr -> Value
+  toJSON = toJSON . show
+
+data BarErr = BarErr deriving (Eq, Read, Show)
+
+instance ToJSON BarErr where
+  toJSON :: BarErr -> Value
+  toJSON = toJSON . show
+
+--------------
+-- Envelope --
+--------------
+
+data Envelope' e a = ErrEnvelope e | SuccEnvelope a
+
+type Envelope e = Envelope' (OpenUnion e)
+
+toErrEnvelope :: IsMember e es => e -> Envelope es a
+toErrEnvelope = ErrEnvelope . openUnionLift
+
+toSuccEnvelope :: a -> Envelope e a
+toSuccEnvelope = SuccEnvelope
+
+pureErrEnvelope :: (Applicative m, IsMember e es) => e -> m (Envelope es a)
+pureErrEnvelope = pure . toErrEnvelope
+
+pureSuccEnvelope :: Applicative m => a -> m (Envelope e a)
+pureSuccEnvelope = pure . toSuccEnvelope
+
+instance (ToJSON (OpenUnion e), ToJSON a) => ToJSON (Envelope e a) where
+  toJSON :: Envelope e a -> Value
+  toJSON (ErrEnvelope e) = object ["err" .= e]
+  toJSON (SuccEnvelope a) = object ["data" .= a]
+

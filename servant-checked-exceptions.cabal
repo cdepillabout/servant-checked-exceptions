@@ -27,6 +27,7 @@ library
                      -- , Servant.Static.TH.Internal.Server
                      -- , Servant.Static.TH.Internal.Util
   build-depends:       base >= 4.8 && < 5
+                     , aeson
                      , lens
                      , natural-transformation
                      , servant >= 0.8
