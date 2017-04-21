@@ -30,8 +30,8 @@ library
                      , aeson
                      , lens
                      , natural-transformation
-                     , servant >= 0.8
-                     , servant-server >= 0.8
+                     , servant
+                     , servant-server
                      , wai
                      , warp
   default-language:    Haskell2010

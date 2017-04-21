@@ -10,6 +10,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -23,11 +24,16 @@ import Data.Functor.Identity (Identity(Identity, runIdentity))
 -- Imports for Servant Stuff
 import Data.Aeson (ToJSON(toJSON), Value, (.=), object)
 import Data.Proxy (Proxy(Proxy))
+import GHC.TypeLits (KnownNat)
 import Network.Wai (Application)
 import Network.Wai.Handler.Warp (run)
+import Servant.API.ContentTypes (AllCTRender)
+import Servant.Server.Internal.Router (Router)
+import Servant.Server.Internal.RoutingApplication (Delayed)
 import Servant
-       (Get, Handler, JSON, Post, QueryParam, Server, ServerT, (:>),
-        (:<|>)((:<|>)), enter, serve)
+       (Context, Get, Handler, HasServer(..), JSON, Post, QueryParam,
+        ReflectMethod, Server, ServerT, Verb, (:>), (:<|>)((:<|>)), enter,
+        serve)
 
 -- This changes in servant-0.10
 -- import Control.Natural ((:~>)(NT))
@@ -281,17 +287,20 @@ type Api = ApiSearch :<|> ApiStatus
 type ApiSearch =
   "search" :>
   QueryParam "q" String :>
-  Post '[JSON] (Envelope '[FooErr, BarErr] String)
+  Throws FooErr :>
+  -- Post '[JSON] (Envelope '[FooErr, BarErr] String)
+  Post '[JSON] String
 
 type ApiStatus = "status" :> Get '[JSON] Int
 
 serverRoot :: ServerT Api Handler
 serverRoot = search :<|> status
 
-search :: Maybe String -> Handler (Envelope '[FooErr, BarErr] String)
+-- search :: Maybe String -> Handler (Envelope '[FooErr, BarErr] String)
+search :: Maybe String -> Handler (Envelope '[FooErr] String)
 search maybeQ = do
   case maybeQ of
-    Just "hello" -> pureErrEnvelope BarErr
+    -- Just "hello" -> pureErrEnvelope BarErr
     Just "Hello" -> pureSuccEnvelope "good"
     _ -> pureErrEnvelope FooErr
 
@@ -311,6 +320,27 @@ apiServer = enter natTrans serverRoot
 
     trans :: forall a. Handler a -> Handler a
     trans = id
+
+------------------------
+-- Servant Type-Level --
+------------------------
+
+data Throws (e :: *)
+
+-- TODO: Make sure to also account for when headers are being used.
+
+instance {-# OVERLAPPING #-} (AllCTRender ctypes (Envelope '[e] a), ReflectMethod method, KnownNat status) =>
+    HasServer (Throws e :> Verb method status ctypes a) context where
+
+  type ServerT (Throws e :> Verb method status ctypes a) m =
+    ServerT (Verb method status ctypes (Envelope '[e] a)) m
+
+  route
+    :: Proxy (Throws e :> Verb method status ctypes a)
+    -> Context context
+    -> Delayed env (ServerT (Verb method status ctypes (Envelope '[e] a)) Handler)
+    -> Router env
+  route _ = route (Proxy :: Proxy (Verb method status ctypes (Envelope '[e] a)))
 
 ------------
 -- Errors --
