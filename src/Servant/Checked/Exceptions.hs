@@ -288,7 +288,7 @@ type ApiSearch =
   "search" :>
   QueryParam "q" String :>
   -- Throws FooErr :>
-  Throwing '[FooErr] :>
+  Throwing '[FooErr, BarErr] :>
   -- Post '[JSON] (Envelope '[FooErr, BarErr] String)
   Post '[JSON] String
 
@@ -297,11 +297,11 @@ type ApiStatus = "status" :> Get '[JSON] Int
 serverRoot :: ServerT Api Handler
 serverRoot = search :<|> status
 
--- search :: Maybe String -> Handler (Envelope '[FooErr, BarErr] String)
-search :: Maybe String -> Handler (Envelope '[FooErr] String)
+search :: Maybe String -> Handler (Envelope '[FooErr, BarErr] String)
+-- search :: Maybe String -> Handler (Envelope '[FooErr] String)
 search maybeQ = do
   case maybeQ of
-    -- Just "hello" -> pureErrEnvelope BarErr
+    Just "hello" -> pureErrEnvelope BarErr
     Just "Hello" -> pureSuccEnvelope "good"
     _ -> pureErrEnvelope FooErr
 
