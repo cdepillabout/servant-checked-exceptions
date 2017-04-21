@@ -24,15 +24,13 @@ import Data.Functor.Identity (Identity(Identity, runIdentity))
 -- Imports for Servant Stuff
 import Data.Aeson (ToJSON(toJSON), Value, (.=), object)
 import Data.Proxy (Proxy(Proxy))
-import GHC.TypeLits (KnownNat)
 import Network.Wai (Application)
 import Network.Wai.Handler.Warp (run)
-import Servant.API.ContentTypes (AllCTRender)
 import Servant.Server.Internal.Router (Router)
 import Servant.Server.Internal.RoutingApplication (Delayed)
 import Servant
        (Context, Get, Handler, HasServer(..), JSON, Post, QueryParam,
-        ReflectMethod, Server, ServerT, Verb, (:>), (:<|>)((:<|>)), enter,
+        Server, ServerT, Verb, (:>), (:<|>)((:<|>)), enter,
         serve)
 
 -- This changes in servant-0.10
@@ -288,6 +286,7 @@ type ApiSearch =
   "search" :>
   QueryParam "q" String :>
   Throws FooErr :>
+  Throws BarErr :>
   -- Throwing '[FooErr, BarErr] :>
   -- Post '[JSON] (Envelope '[FooErr, BarErr] String)
   Post '[JSON] String
@@ -297,11 +296,11 @@ type ApiStatus = "status" :> Get '[JSON] Int
 serverRoot :: ServerT Api Handler
 serverRoot = search :<|> status
 
--- search :: Maybe String -> Handler (Envelope '[FooErr, BarErr] String)
-search :: Maybe String -> Handler (Envelope '[FooErr] String)
+search :: Maybe String -> Handler (Envelope '[FooErr, BarErr] String)
+-- search :: Maybe String -> Handler (Envelope '[FooErr] String)
 search maybeQ = do
   case maybeQ of
-    -- Just "hello" -> pureErrEnvelope BarErr
+    Just "hello" -> pureErrEnvelope BarErr
     Just "Hello" -> pureSuccEnvelope "good"
     _ -> pureErrEnvelope FooErr
 
@@ -332,21 +331,8 @@ data Throwing (e :: [*])
 
 -- TODO: Make sure to also account for when headers are being used.
 
--- instance {-# OVERLAPPING #-} (AllCTRender ctypes (Envelope '[e] a), ReflectMethod method, KnownNat status) =>
---     HasServer (Throws e :> Verb method status ctypes a) context where
-
---   type ServerT (Throws e :> Verb method status ctypes a) m =
---     ServerT (Verb method status ctypes (Envelope '[e] a)) m
-
---   route
---     :: Proxy (Throws e :> Verb method status ctypes a)
---     -> Context context
---     -> Delayed env (ServerT (Verb method status ctypes (Envelope '[e] a)) Handler)
---     -> Router env
---   route _ = route (Proxy :: Proxy (Verb method status ctypes (Envelope '[e] a)))
-
 instance (HasServer (Throwing '[e] :> api) context) =>
-  HasServer (Throws e :> api) context where
+    HasServer (Throws e :> api) context where
 
   type ServerT (Throws e :> api) m =
     ServerT (Throwing '[e] :> api) m
@@ -358,13 +344,8 @@ instance (HasServer (Throwing '[e] :> api) context) =>
     -> Router env
   route _ = route (Proxy :: Proxy (Throwing '[e] :> api))
 
-instance
-  {-# OVERLAPPING #-}
-  ( AllCTRender ctypes (Envelope es a)
-  , ReflectMethod method
-  , KnownNat status
-  )
-  => HasServer (Throwing es :> Verb method status ctypes a) context where
+instance (HasServer (Verb method status ctypes (Envelope es a)) context) =>
+    HasServer (Throwing es :> Verb method status ctypes a) context where
 
   type ServerT (Throwing es :> Verb method status ctypes a) m =
     ServerT (Verb method status ctypes (Envelope es a)) m
@@ -375,6 +356,23 @@ instance
     -> Delayed env (ServerT (Verb method status ctypes (Envelope es a)) Handler)
     -> Router env
   route _ = route (Proxy :: Proxy (Verb method status ctypes (Envelope es a)))
+
+instance (HasServer (Throwing (Snoc es e) :> api) context) =>
+    HasServer (Throwing es :> Throws e :> api) context where
+
+  type ServerT (Throwing es :> Throws e :> api) m =
+    ServerT (Throwing (Snoc es e) :> api ) m
+
+  route
+    :: Proxy (Throwing es :> Throws e :> api)
+    -> Context context
+    -> Delayed env (ServerT (Throwing (Snoc es e) :> api) Handler)
+    -> Router env
+  route _ = route (Proxy :: Proxy (Throwing (Snoc es e) :> api))
+
+type family Snoc (as :: [k]) (b :: k) where
+  Snoc '[] b = '[b]
+  Snoc (a ': as) b = (a ': Snoc as b)
 
 ------------
 -- Errors --
