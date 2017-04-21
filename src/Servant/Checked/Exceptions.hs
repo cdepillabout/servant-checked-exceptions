@@ -287,7 +287,8 @@ type Api = ApiSearch :<|> ApiStatus
 type ApiSearch =
   "search" :>
   QueryParam "q" String :>
-  Throws FooErr :>
+  -- Throws FooErr :>
+  Throwing '[FooErr] :>
   -- Post '[JSON] (Envelope '[FooErr, BarErr] String)
   Post '[JSON] String
 
@@ -325,7 +326,9 @@ apiServer = enter natTrans serverRoot
 -- Servant Type-Level --
 ------------------------
 
-data Throws (e :: *)
+data Throws e
+
+data Throwing (e :: [*])
 
 -- TODO: Make sure to also account for when headers are being used.
 
@@ -341,6 +344,24 @@ instance {-# OVERLAPPING #-} (AllCTRender ctypes (Envelope '[e] a), ReflectMetho
     -> Delayed env (ServerT (Verb method status ctypes (Envelope '[e] a)) Handler)
     -> Router env
   route _ = route (Proxy :: Proxy (Verb method status ctypes (Envelope '[e] a)))
+
+instance
+  {-# OVERLAPPING #-}
+  ( AllCTRender ctypes (Envelope es a)
+  , ReflectMethod method
+  , KnownNat status
+  )
+  => HasServer (Throwing es :> Verb method status ctypes a) context where
+
+  type ServerT (Throwing es :> Verb method status ctypes a) m =
+    ServerT (Verb method status ctypes (Envelope es a)) m
+
+  route
+    :: Proxy (Throwing es :> Verb method status ctypes a)
+    -> Context context
+    -> Delayed env (ServerT (Verb method status ctypes (Envelope es a)) Handler)
+    -> Router env
+  route _ = route (Proxy :: Proxy (Verb method status ctypes (Envelope es a)))
 
 ------------
 -- Errors --
