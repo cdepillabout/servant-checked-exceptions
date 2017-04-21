@@ -1,7 +1,11 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE EmptyCase #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -9,7 +13,8 @@
 
 module Servant.Checked.Exceptions where
 
-import Control.Lens (Prism, prism)
+import Control.Lens (Prism, Prism', iso, preview, prism, prism', review)
+import Data.Functor.Identity (Identity(Identity, runIdentity))
 
 -- ghci> let a = openUnion # (5 :: Int) :: OpenUnion '[Bool, Int]
 
@@ -48,9 +53,30 @@ unionTest =
 -- recursiveUnion =
 --   union (\u -> undefined) (\m -> "this: " ++ show m) testThatUnion
 
+testUlift :: Union Identity (String ': Char ': Int ': as)
+testUlift = ulift $ Identity (3 :: Int)
+
+testUmatch :: Maybe (Identity String)
+testUmatch = umatch testUlift
+
+testOpenUnion :: OpenUnion '[String, Int]
+testOpenUnion = review openUnion (3 :: Int)
+
+testOpenUnion2 :: OpenUnion '[String, Int]
+testOpenUnion2 = review openUnion "hello"
+
+testGetFromOpenUnion :: Maybe Int
+testGetFromOpenUnion = matchOpenUnion testOpenUnion
+
+testGetFromOpenUnion2 :: Maybe String
+testGetFromOpenUnion2 = matchOpenUnion testOpenUnion
+
 ---------------------------------------
 -- This is from Data.Vinyl.TypeLevel --
 ---------------------------------------
+
+
+-- TODO: Can we just use real GHC type-level natrual numbers?
 
 
 -- | A mere approximation of the natural numbers. And their image as lifted by
@@ -103,29 +129,27 @@ _That :: Prism (Union f (a ': as)) (Union f (a ': bs)) (Union f as) (Union f bs)
 _That = prism That (union Right (Left . This))
 {-# INLINE _That #-}
 
--- class i ~ RIndex a as => UElem (a :: u) (as :: [u]) (i :: Nat) where
---   {-# MINIMAL uprism | ulift, umatch #-}
+class i ~ RIndex a as => UElem (a :: u) (as :: [u]) (i :: Nat) where
+  {-# MINIMAL uprism | ulift, umatch #-}
 
---   uprism :: Prism' (Union f as) (f a)
---   uprism = prism' ulift umatch
+  uprism :: Prism' (Union f as) (f a)
+  uprism = prism' ulift umatch
 
---   ulift :: f a -> Union f as
---   ulift = review uprism
+  ulift :: f a -> Union f as
+  ulift = review uprism
 
---   umatch :: Union f as -> Maybe (f a)
---   umatch = preview uprism
+  umatch :: Union f as -> Maybe (f a)
+  umatch = preview uprism
 
--- instance UElem a (a ': as) 'Z where
---   uprism = _This
---   {-# INLINE uprism #-}
+instance UElem a (a ': as) 'Z where
+  uprism :: Prism' (Union f (a ': as)) (f a)
+  uprism = _This
+  {-# INLINE uprism #-}
 
--- instance
---     ( RIndex a (b ': as) ~ 'S i
---     , UElem a as i
---     ) => UElem a (b ': as) ('S i)
---   where
---     uprism = _That . uprism
---     {-# INLINE uprism #-}
+instance (RIndex a (b ': as) ~ 'S i, UElem a as i) => UElem a (b ': as) ('S i) where
+  uprism :: Prism' (Union f (b ': as)) (f a)
+  uprism = _That . uprism
+  {-# INLINE uprism #-}
 
 -- class is ~ RImage as bs => USubset (as :: [u]) (bs :: [u]) is where
 --   {-# MINIMAL usubset | urelax, urestrict #-}
@@ -150,11 +174,14 @@ _That = prism That (union Right (Left . This))
 --   urelax = union urelax ulift
 --   urestrict ubs = This <$> umatch ubs <|> That <$> urestrict ubs
 
--- type OpenUnion = Union Identity
+type OpenUnion = Union Identity
 
--- openUnion :: forall a as . UElem a as (RIndex a as) => Prism' (OpenUnion as) a
--- openUnion = uprism . iso runIdentity Identity
--- {-# INLINE openUnion #-}
+openUnion :: forall a as . UElem a as (RIndex a as) => Prism' (OpenUnion as) a
+openUnion = uprism . iso runIdentity Identity
+{-# INLINE openUnion #-}
+
+matchOpenUnion :: forall a as . UElem a as (RIndex a as) => OpenUnion as -> Maybe a
+matchOpenUnion = preview openUnion
 
 -- instance NFData (Union f '[]) where
 --   rnf = absurdUnion
@@ -166,40 +193,40 @@ _That = prism That (union Right (Left . This))
 --   where
 --     rnf = union rnf rnf
 
--- instance Show (Union f '[]) where
---   showsPrec _ = absurdUnion
+instance Show (Union f '[]) where
+  showsPrec _ = absurdUnion
 
--- instance
---     ( Show (f a)
---     , Show (Union f as)
---     ) => Show (Union f (a ': as))
---   where
---     showsPrec n = union (showsPrec n) (showsPrec n)
+instance
+    ( Show (f a)
+    , Show (Union f as)
+    ) => Show (Union f (a ': as))
+  where
+    showsPrec n = union (showsPrec n) (showsPrec n)
 
--- instance Eq (Union f '[]) where
---   (==) = absurdUnion
+instance Eq (Union f '[]) where
+  (==) = absurdUnion
 
--- instance
---     ( Eq (f a)
---     , Eq (Union f as)
---     ) => Eq (Union f (a ': as))
---   where
---     This a1 == This a2 = a1 == a2
---     That u1 == That u2 = u1 == u2
---     _       == _       = False
+instance
+    ( Eq (f a)
+    , Eq (Union f as)
+    ) => Eq (Union f (a ': as))
+  where
+    This a1 == This a2 = a1 == a2
+    That u1 == That u2 = u1 == u2
+    _       == _       = False
 
--- instance Ord (Union f '[]) where
---   compare = absurdUnion
+instance Ord (Union f '[]) where
+  compare = absurdUnion
 
--- instance
---     ( Ord (f a)
---     , Ord (Union f as)
---     ) => Ord (Union f (a ': as))
---   where
---     compare (This a1) (This a2) = compare a1 a2
---     compare (That u1) (That u2) = compare u1 u2
---     compare (This _)  (That _)  = LT
---     compare (That _)  (This _)  = GT
+instance
+    ( Ord (f a)
+    , Ord (Union f as)
+    ) => Ord (Union f (a ': as))
+  where
+    compare (This a1) (This a2) = compare a1 a2
+    compare (That u1) (That u2) = compare u1 u2
+    compare (This _)  (That _)  = LT
+    compare (That _)  (This _)  = GT
 
 -- instance f ~ Identity => Exception (Union f '[])
 
@@ -214,4 +241,4 @@ _That = prism That (union Right (Left . This))
 --     fromException sE = matchR <|> matchL
 --       where
 --         matchR = This . Identity <$> fromException sE
--- matchL = That <$> fromException sE
+--         matchL = That <$> fromException sE
