@@ -364,9 +364,6 @@ instance ToJSON BazErr where
 -- Envelope --
 --------------
 
--- data Envelope' e a = ErrEnvelope e | SuccEnvelope a
--- type Envelope e = Envelope' (OpenUnion e)
-
 data Envelope e a = ErrEnvelope (OpenUnion e) | SuccEnvelope a
 
 toErrEnvelope :: IsMember e es => e -> Envelope es a
