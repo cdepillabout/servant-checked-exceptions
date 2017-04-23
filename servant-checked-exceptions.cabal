@@ -21,6 +21,7 @@ library
   hs-source-dirs:      src
   exposed-modules:     Servant.Checked.Exceptions
                      , Servant.Checked.Exceptions.Internal
+                     , Servant.Checked.Exceptions.Internal.Envelope
                      , Servant.Checked.Exceptions.Internal.Union
   build-depends:       base >= 4.8 && < 5
                      , aeson
@@ -29,6 +30,8 @@ library
                      , natural-transformation
                      , servant
                      , servant-server
+                     -- This can be moved to the executable
+                     , text
                      , wai
                      , warp
   default-language:    Haskell2010

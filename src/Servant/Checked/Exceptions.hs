@@ -5,7 +5,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PolyKinds #-}
@@ -18,11 +17,11 @@
 module Servant.Checked.Exceptions where
 
 -- Imports for Servant Stuff
-import Control.Applicative ((<|>))
 import Data.Aeson
-       (FromJSON(parseJSON), ToJSON(toJSON), Value, (.=), (.:), object, withObject)
+       (FromJSON(parseJSON), ToJSON(toJSON), Value, withText)
 import Data.Aeson.Types (Parser)
 import Data.Proxy (Proxy(Proxy))
+import Data.Text (unpack)
 import Network.Wai (Application)
 import Network.Wai.Handler.Warp (run)
 import Servant.Server.Internal.Router (Router)
@@ -30,12 +29,13 @@ import Servant.Server.Internal.RoutingApplication (Delayed)
 import Servant
        (Context, Handler, HasServer(..), JSON, Post, QueryParam, Server,
         ServerT, Verb, (:>), enter, serve)
+import Text.Read (readMaybe)
 
 -- This changes in servant-0.10
 -- import Control.Natural ((:~>)(NT))
 import Servant.Utils.Enter ((:~>)(Nat))
 
-import Servant.Checked.Exceptions.Internal (IsMember, OpenUnion, openUnionLift)
+import Servant.Checked.Exceptions.Internal (Envelope, pureErrEnvelope, pureSuccEnvelope)
 
 defaultMainApi :: IO ()
 defaultMainApi = run 8201 app
@@ -136,11 +136,23 @@ instance ToJSON FooErr where
   toJSON :: FooErr -> Value
   toJSON = toJSON . show
 
+instance FromJSON FooErr where
+  parseJSON :: Value -> Parser FooErr
+  parseJSON =
+    withText "FooErr" $
+      maybe (fail "could not parse as FooErr") pure . readMaybe . unpack
+
 data BarErr = BarErr deriving (Eq, Read, Show)
 
 instance ToJSON BarErr where
   toJSON :: BarErr -> Value
   toJSON = toJSON . show
+
+instance FromJSON BarErr where
+  parseJSON :: Value -> Parser BarErr
+  parseJSON =
+    withText "BarErr" $
+      maybe (fail "could not parse as BarErr") pure . readMaybe . unpack
 
 data BazErr = BazErr deriving (Eq, Read, Show)
 
@@ -148,31 +160,8 @@ instance ToJSON BazErr where
   toJSON :: BazErr -> Value
   toJSON = toJSON . show
 
---------------
--- Envelope --
---------------
-
-data Envelope es a = ErrEnvelope (OpenUnion es) | SuccEnvelope a
-
-toErrEnvelope :: IsMember e es => e -> Envelope es a
-toErrEnvelope = ErrEnvelope . openUnionLift
-
-toSuccEnvelope :: a -> Envelope es a
-toSuccEnvelope = SuccEnvelope
-
-pureErrEnvelope :: (Applicative m, IsMember e es) => e -> m (Envelope es a)
-pureErrEnvelope = pure . toErrEnvelope
-
-pureSuccEnvelope :: Applicative m => a -> m (Envelope es a)
-pureSuccEnvelope = pure . toSuccEnvelope
-
-instance (ToJSON (OpenUnion es), ToJSON a) => ToJSON (Envelope es a) where
-  toJSON :: Envelope es a -> Value
-  toJSON (ErrEnvelope es) = object ["err" .= es]
-  toJSON (SuccEnvelope a) = object ["data" .= a]
-
-instance (FromJSON (OpenUnion es), FromJSON a) => FromJSON (Envelope es a) where
-  parseJSON :: Value -> Parser (Envelope es a)
-  parseJSON = withObject "Envelope" $ \obj ->
-    SuccEnvelope <$> obj .: "data" <|>
-    ErrEnvelope <$> obj .: "err"
+instance FromJSON BazErr where
+  parseJSON :: Value -> Parser BazErr
+  parseJSON =
+    withText "BazErr" $
+      maybe (fail "could not parse as BazErr") pure . readMaybe . unpack
