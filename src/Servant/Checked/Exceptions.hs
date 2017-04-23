@@ -24,18 +24,16 @@ import Data.Proxy (Proxy(Proxy))
 import Data.Text (unpack)
 import Network.Wai (Application)
 import Network.Wai.Handler.Warp (run)
-import Servant.Server.Internal.Router (Router)
-import Servant.Server.Internal.RoutingApplication (Delayed)
 import Servant
-       (Context, Handler, HasServer(..), JSON, Post, QueryParam, Server,
-        ServerT, Verb, (:>), enter, serve)
+       (Handler, HasServer(..), JSON, Post, QueryParam, Server, ServerT,
+        (:>), enter, serve)
 import Text.Read (readMaybe)
 
 -- This changes in servant-0.10
 -- import Control.Natural ((:~>)(NT))
 import Servant.Utils.Enter ((:~>)(Nat))
 
-import Servant.Checked.Exceptions.Internal (Envelope, pureErrEnvelope, pureSuccEnvelope)
+import Servant.Checked.Exceptions.Internal (Envelope, Throws, pureErrEnvelope, pureSuccEnvelope)
 
 defaultMainApi :: IO ()
 defaultMainApi = run 8201 app
@@ -72,59 +70,6 @@ apiServer = enter natTrans serverRoot
 
     trans :: forall a. Handler a -> Handler a
     trans = id
-
-------------------------
--- Servant Type-Level --
-------------------------
-
-data Throws (e :: *)
-
-data Throwing (e :: [*])
-
--- TODO: Make sure to also account for when headers are being used.
-
-instance (HasServer (Throwing '[e] :> api) context) =>
-    HasServer (Throws e :> api) context where
-
-  type ServerT (Throws e :> api) m =
-    ServerT (Throwing '[e] :> api) m
-
-  route
-    :: Proxy (Throws e :> api)
-    -> Context context
-    -> Delayed env (ServerT (Throwing '[e] :> api) Handler)
-    -> Router env
-  route _ = route (Proxy :: Proxy (Throwing '[e] :> api))
-
-instance (HasServer (Verb method status ctypes (Envelope es a)) context) =>
-    HasServer (Throwing es :> Verb method status ctypes a) context where
-
-  type ServerT (Throwing es :> Verb method status ctypes a) m =
-    ServerT (Verb method status ctypes (Envelope es a)) m
-
-  route
-    :: Proxy (Throwing es :> Verb method status ctypes a)
-    -> Context context
-    -> Delayed env (ServerT (Verb method status ctypes (Envelope es a)) Handler)
-    -> Router env
-  route _ = route (Proxy :: Proxy (Verb method status ctypes (Envelope es a)))
-
-instance (HasServer (Throwing (Snoc es e) :> api) context) =>
-    HasServer (Throwing es :> Throws e :> api) context where
-
-  type ServerT (Throwing es :> Throws e :> api) m =
-    ServerT (Throwing (Snoc es e) :> api ) m
-
-  route
-    :: Proxy (Throwing es :> Throws e :> api)
-    -> Context context
-    -> Delayed env (ServerT (Throwing (Snoc es e) :> api) Handler)
-    -> Router env
-  route _ = route (Proxy :: Proxy (Throwing (Snoc es e) :> api))
-
-type family Snoc (as :: [k]) (b :: k) where
-  Snoc '[] b = '[b]
-  Snoc (a ': as) b = (a ': Snoc as b)
 
 ------------
 -- Errors --

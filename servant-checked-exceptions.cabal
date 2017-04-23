@@ -22,6 +22,11 @@ library
   exposed-modules:     Servant.Checked.Exceptions
                      , Servant.Checked.Exceptions.Internal
                      , Servant.Checked.Exceptions.Internal.Envelope
+                     , Servant.Checked.Exceptions.Internal.Servant
+                     , Servant.Checked.Exceptions.Internal.Servant.API
+                     , Servant.Checked.Exceptions.Internal.Servant.Client
+                     , Servant.Checked.Exceptions.Internal.Servant.Docs
+                     , Servant.Checked.Exceptions.Internal.Servant.Server
                      , Servant.Checked.Exceptions.Internal.Union
   build-depends:       base >= 4.8 && < 5
                      , aeson
