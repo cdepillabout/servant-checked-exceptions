@@ -18,10 +18,12 @@
 module Servant.Checked.Exceptions where
 
 -- Imports for Union stuff
+import Control.Applicative ((<|>))
 import Control.Lens (Prism, Prism', iso, preview, prism, prism', review)
 import Control.DeepSeq (NFData(rnf))
 import Data.Functor.Identity (Identity(Identity, runIdentity))
 import GHC.TypeLits (Nat, type (+))
+import Text.Read (Read(readPrec), ReadPrec)
 
 -- Imports for Servant Stuff
 import Data.Aeson (ToJSON(toJSON), Value, (.=), object)
@@ -192,6 +194,15 @@ instance Show (Union f '[]) where
 
 instance (Show (f a), Show (Union f as)) => Show (Union f (a ': as)) where
   showsPrec n = union (showsPrec n) (showsPrec n)
+
+instance Read (Union f '[]) where
+  readsPrec :: Int -> ReadS (Union f '[])
+  readsPrec _ _ = []
+
+-- | TODO: This is only a valid instance when the 'Read' instances for the types don't overlap.
+instance (Read (f a), Read (Union f as)) => Read (Union f (a ': as)) where
+  readPrec :: ReadPrec (Union f (a ': as))
+  readPrec = fmap This readPrec <|> fmap That readPrec
 
 instance Eq (Union f '[]) where
   (==) = absurdUnion
