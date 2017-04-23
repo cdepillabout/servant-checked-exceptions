@@ -169,3 +169,10 @@ instance (ToJSON (OpenUnion e), ToJSON a) => ToJSON (Envelope e a) where
   toJSON :: Envelope e a -> Value
   toJSON (ErrEnvelope e) = object ["err" .= e]
   toJSON (SuccEnvelope a) = object ["data" .= a]
+
+-- | TODO: This is only a valid instance when the 'Read' instances for the types don't overlap.
+instance (FromJSON (OpenUnion e), FromJSON a) => FromJSON (Envelope e a) where
+  parseJSON :: Value -> Parser (Envelope e a)
+  parseJSON val = undefined -- fmap This (parseJSON val) <|> fmap That (parseJSON val)
+
+
