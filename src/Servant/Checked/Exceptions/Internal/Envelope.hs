@@ -12,10 +12,13 @@
 module Servant.Checked.Exceptions.Internal.Envelope where
 
 import Control.Applicative ((<|>))
+import Control.Monad.Fix (MonadFix(mfix))
 import Data.Aeson
-       (FromJSON(parseJSON), ToJSON(toJSON), Value, (.=), (.:), object, withObject)
+       (FromJSON(parseJSON), ToJSON(toJSON), Value, (.=), (.:), object,
+        withObject)
 import Data.Aeson.Types (Parser)
 import Data.Data (Data)
+import Data.Semigroup (Semigroup((<>), stimes), stimesIdempotent)
 import Data.Typeable (Typeable)
 import GHC.Generics (Generic)
 
@@ -61,7 +64,25 @@ instance Applicative (Envelope es) where
   ErrEnvelope es <*> _ = ErrEnvelope es
   SuccEnvelope f <*> r = fmap f r
 
-instance Monad (Envelope e) where
+instance Monad (Envelope es) where
   (>>=) :: Envelope es a -> (a -> Envelope es b) -> Envelope es b
-  ErrEnvelope l >>= _ = ErrEnvelope l
-  SuccEnvelope r >>= k = k r
+  ErrEnvelope es >>= _ = ErrEnvelope es
+  SuccEnvelope a >>= k = k a
+
+instance MonadFix (Envelope es) where
+  mfix :: (a -> Envelope es a) -> Envelope es a
+  mfix f =
+    let a = f (unSucc a)
+    in a
+    where
+      unSucc :: Envelope es a -> a
+      unSucc (SuccEnvelope x) = x
+      unSucc (ErrEnvelope _) = errorWithoutStackTrace "mfix Envelope: ErrEnvelope"
+
+instance Semigroup (Envelope es a) where
+  (<>) :: Envelope es a -> Envelope es a -> Envelope es a
+  ErrEnvelope _ <> b = b
+  a      <> _ = a
+
+  stimes :: Integral b => b -> Envelope es a -> Envelope es a
+  stimes = stimesIdempotent
