@@ -28,6 +28,7 @@ library
                      -- , Servant.Static.TH.Internal.Util
   build-depends:       base >= 4.8 && < 5
                      , aeson
+                     , deepseq
                      , lens
                      , natural-transformation
                      , servant

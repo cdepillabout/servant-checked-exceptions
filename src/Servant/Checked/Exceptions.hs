@@ -19,6 +19,7 @@ module Servant.Checked.Exceptions where
 
 -- Imports for Union stuff
 import Control.Lens (Prism, Prism', iso, preview, prism, prism', review)
+import Control.DeepSeq (NFData(rnf))
 import Data.Functor.Identity (Identity(Identity, runIdentity))
 import GHC.TypeLits (Nat, type (+))
 
@@ -180,21 +181,17 @@ openUnionLift = review openUnion
 
 type IsMember a as = UElem a as (RIndex a as)
 
--- instance NFData (Union f '[]) where
---   rnf = absurdUnion
+instance NFData (Union f '[]) where
+  rnf = absurdUnion
 
--- instance
---     ( NFData (f a)
---     , NFData (Union f as)
---     ) => NFData (Union f (a ': as))
---   where
---     rnf = union rnf rnf
+instance (NFData (f a), NFData (Union f as)) => NFData (Union f (a ': as)) where
+  rnf = union rnf rnf
 
 instance Show (Union f '[]) where
   showsPrec _ = absurdUnion
 
 instance (Show (f a), Show (Union f as)) => Show (Union f (a ': as)) where
-    showsPrec n = union (showsPrec n) (showsPrec n)
+  showsPrec n = union (showsPrec n) (showsPrec n)
 
 instance Eq (Union f '[]) where
   (==) = absurdUnion
@@ -221,13 +218,6 @@ instance ToJSON (Union f '[]) where
 instance (ToJSON (f a), ToJSON (Union f as)) => ToJSON (Union f (a ': as)) where
   toJSON :: Union f (a ': as) -> Value
   toJSON = union toJSON toJSON
-
--- instance
---     ( Show (f a)
---     , Show (Union f as)
---     ) => Show (Union f (a ': as))
---   where
---     showsPrec n = union (showsPrec n) (showsPrec n)
 
 -- instance f ~ Identity => Exception (Union f '[])
 
