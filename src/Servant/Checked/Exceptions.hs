@@ -259,8 +259,6 @@ type ApiSearch =
   QueryParam "q" String :>
   Throws FooErr :>
   Throws BarErr :>
-  -- Throwing '[FooErr, BarErr] :>
-  -- Post '[JSON] (Envelope '[FooErr, BarErr] String)
   Post '[JSON] String
 
 serverRoot :: ServerT Api Handler
