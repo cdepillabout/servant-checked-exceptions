@@ -26,16 +26,17 @@ import GHC.TypeLits (Nat, type (+))
 import Text.Read (Read(readPrec), ReadPrec)
 
 -- Imports for Servant Stuff
-import Data.Aeson (ToJSON(toJSON), Value, (.=), object)
+import Data.Aeson
+       (FromJSON(parseJSON), ToJSON(toJSON), Value, (.=), object)
+import Data.Aeson.Types (Parser)
 import Data.Proxy (Proxy(Proxy))
 import Network.Wai (Application)
 import Network.Wai.Handler.Warp (run)
 import Servant.Server.Internal.Router (Router)
 import Servant.Server.Internal.RoutingApplication (Delayed)
 import Servant
-       (Context, Get, Handler, HasServer(..), JSON, Post, QueryParam,
-        Server, ServerT, Verb, (:>), (:<|>)((:<|>)), enter,
-        serve)
+       (Context, Handler, HasServer(..), JSON, Post, QueryParam, Server,
+        ServerT, Verb, (:>), enter, serve)
 
 -- This changes in servant-0.10
 -- import Control.Natural ((:~>)(NT))
@@ -195,6 +196,7 @@ instance Show (Union f '[]) where
 instance (Show (f a), Show (Union f as)) => Show (Union f (a ': as)) where
   showsPrec n = union (showsPrec n) (showsPrec n)
 
+-- | This will always fail, since @'Union' f \'[]@ is effectively 'Void'.
 instance Read (Union f '[]) where
   readsPrec :: Int -> ReadS (Union f '[])
   readsPrec _ _ = []
@@ -229,6 +231,16 @@ instance ToJSON (Union f '[]) where
 instance (ToJSON (f a), ToJSON (Union f as)) => ToJSON (Union f (a ': as)) where
   toJSON :: Union f (a ': as) -> Value
   toJSON = union toJSON toJSON
+
+-- | This will always fail, since @'Union' f \'[]@ is effectively 'Void'.
+instance FromJSON (Union f '[]) where
+  parseJSON :: Value -> Parser (Union f '[])
+  parseJSON _ = fail "Value of Union f '[] can never be created"
+
+-- | TODO: This is only a valid instance when the 'Read' instances for the types don't overlap.
+instance (FromJSON (f a), FromJSON (Union f as)) => FromJSON (Union f (a ': as)) where
+  parseJSON :: Value -> Parser (Union f (a ': as))
+  parseJSON val = fmap This (parseJSON val) <|> fmap That (parseJSON val)
 
 -- instance f ~ Identity => Exception (Union f '[])
 
