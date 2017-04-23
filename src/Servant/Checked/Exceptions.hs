@@ -151,28 +151,28 @@ instance ToJSON BazErr where
 -- Envelope --
 --------------
 
-data Envelope e a = ErrEnvelope (OpenUnion e) | SuccEnvelope a
+data Envelope es a = ErrEnvelope (OpenUnion es) | SuccEnvelope a
 
 toErrEnvelope :: IsMember e es => e -> Envelope es a
 toErrEnvelope = ErrEnvelope . openUnionLift
 
-toSuccEnvelope :: a -> Envelope e a
+toSuccEnvelope :: a -> Envelope es a
 toSuccEnvelope = SuccEnvelope
 
 pureErrEnvelope :: (Applicative m, IsMember e es) => e -> m (Envelope es a)
 pureErrEnvelope = pure . toErrEnvelope
 
-pureSuccEnvelope :: Applicative m => a -> m (Envelope e a)
+pureSuccEnvelope :: Applicative m => a -> m (Envelope es a)
 pureSuccEnvelope = pure . toSuccEnvelope
 
-instance (ToJSON (OpenUnion e), ToJSON a) => ToJSON (Envelope e a) where
-  toJSON :: Envelope e a -> Value
+instance (ToJSON (OpenUnion es), ToJSON a) => ToJSON (Envelope es a) where
+  toJSON :: Envelope es a -> Value
   toJSON (ErrEnvelope e) = object ["err" .= e]
   toJSON (SuccEnvelope a) = object ["data" .= a]
 
 -- | TODO: This is only a valid instance when the 'Read' instances for the types don't overlap.
-instance (FromJSON (OpenUnion e), FromJSON a) => FromJSON (Envelope e a) where
-  parseJSON :: Value -> Parser (Envelope e a)
+instance (FromJSON (OpenUnion es), FromJSON a) => FromJSON (Envelope es a) where
+  parseJSON :: Value -> Parser (Envelope es a)
   parseJSON val = undefined -- fmap This (parseJSON val) <|> fmap That (parseJSON val)
 
 
