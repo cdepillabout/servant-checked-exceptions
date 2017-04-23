@@ -20,12 +20,8 @@ flag buildexample
 library
   hs-source-dirs:      src
   exposed-modules:     Servant.Checked.Exceptions
-                     -- , Servant.Static.TH.Internal
-                     -- , Servant.Static.TH.Internal.Api
-                     -- , Servant.Static.TH.Internal.FileTree
-                     -- , Servant.Static.TH.Internal.Mime
-                     -- , Servant.Static.TH.Internal.Server
-                     -- , Servant.Static.TH.Internal.Util
+                     , Servant.Checked.Exceptions.Internal
+                     , Servant.Checked.Exceptions.Internal.Union
   build-depends:       base >= 4.8 && < 5
                      , aeson
                      , deepseq
