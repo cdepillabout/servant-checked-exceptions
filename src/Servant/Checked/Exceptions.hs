@@ -53,7 +53,7 @@ serverRoot :: ServerT Api Handler
 serverRoot = search
 
 search :: Maybe String -> Handler (Envelope '[FooErr, BarErr] String)
-search maybeQ = do
+search maybeQ =
   case maybeQ of
     Just "hello" -> pureErrEnvelope BarErr
     Just "Hello" -> pureSuccEnvelope "good"
