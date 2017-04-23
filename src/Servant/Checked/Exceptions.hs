@@ -167,7 +167,7 @@ pureSuccEnvelope = pure . toSuccEnvelope
 
 instance (ToJSON (OpenUnion es), ToJSON a) => ToJSON (Envelope es a) where
   toJSON :: Envelope es a -> Value
-  toJSON (ErrEnvelope e) = object ["err" .= e]
+  toJSON (ErrEnvelope es) = object ["err" .= es]
   toJSON (SuccEnvelope a) = object ["data" .= a]
 
 -- | TODO: This is only a valid instance when the 'Read' instances for the types don't overlap.
