@@ -42,22 +42,6 @@ import Servant
 -- import Control.Natural ((:~>)(NT))
 import Servant.Utils.Enter ((:~>)(Nat))
 
--- ghci> let a = openUnion # (5 :: Int) :: OpenUnion '[Bool, Int]
-
--- ghci> a ^? openUnion :: Maybe Int
--- Just 5
-
--- ghci> a ^? openUnion :: Maybe Bool
--- Nothing
-
--- ghci> a ^? openUnion :: Maybe Char
--- <interactive>:8:6:
---     No instance for (UElem Char '[] (RIndex Char '[]))
---       arising from a use of ‘openUnion’
---     In the second argument of ‘(^?)’, namely ‘openUnion’
---     In the expression: a ^? openUnion :: Maybe Char
---     In an equation for ‘it’: it = a ^? openUnion :: Maybe Char
-
 -----------
 -- TESTS --
 -----------
