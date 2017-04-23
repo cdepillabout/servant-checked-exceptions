@@ -18,8 +18,9 @@
 module Servant.Checked.Exceptions where
 
 -- Imports for Servant Stuff
+import Control.Applicative ((<|>))
 import Data.Aeson
-       (FromJSON(parseJSON), ToJSON(toJSON), Value, (.=), object)
+       (FromJSON(parseJSON), ToJSON(toJSON), Value, (.=), (.:), object, withObject)
 import Data.Aeson.Types (Parser)
 import Data.Proxy (Proxy(Proxy))
 import Network.Wai (Application)
@@ -170,9 +171,8 @@ instance (ToJSON (OpenUnion es), ToJSON a) => ToJSON (Envelope es a) where
   toJSON (ErrEnvelope es) = object ["err" .= es]
   toJSON (SuccEnvelope a) = object ["data" .= a]
 
--- | TODO: This is only a valid instance when the 'Read' instances for the types don't overlap.
 instance (FromJSON (OpenUnion es), FromJSON a) => FromJSON (Envelope es a) where
   parseJSON :: Value -> Parser (Envelope es a)
-  parseJSON val = undefined -- fmap This (parseJSON val) <|> fmap That (parseJSON val)
-
-
+  parseJSON = withObject "Envelope" $ \obj ->
+    SuccEnvelope <$> obj .: "data" <|>
+    ErrEnvelope <$> obj .: "err"
