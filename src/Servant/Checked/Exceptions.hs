@@ -265,7 +265,6 @@ serverRoot :: ServerT Api Handler
 serverRoot = search
 
 search :: Maybe String -> Handler (Envelope '[FooErr, BarErr] String)
--- search :: Maybe String -> Handler (Envelope '[FooErr] String)
 search maybeQ = do
   case maybeQ of
     Just "hello" -> pureErrEnvelope BarErr
