@@ -22,7 +22,7 @@ import Control.Applicative ((<|>))
 import Control.Lens (Prism, Prism', iso, preview, prism, prism', review)
 import Control.DeepSeq (NFData(rnf))
 import Data.Aeson
-       (FromJSON(parseJSON), ToJSON(toJSON), Value, (.=), object)
+       (FromJSON(parseJSON), ToJSON(toJSON), Value)
 import Data.Aeson.Types (Parser)
 import Data.Functor.Identity (Identity(Identity, runIdentity))
 import GHC.TypeLits (Nat, type (+))
