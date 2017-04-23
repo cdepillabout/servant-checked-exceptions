@@ -252,7 +252,7 @@ instance (ToJSON (f a), ToJSON (Union f as)) => ToJSON (Union f (a ': as)) where
 defaultMainApi :: IO ()
 defaultMainApi = run 8201 app
 
-type Api = ApiSearch :<|> ApiStatus
+type Api = ApiSearch
 
 type ApiSearch =
   "search" :>
@@ -263,10 +263,8 @@ type ApiSearch =
   -- Post '[JSON] (Envelope '[FooErr, BarErr] String)
   Post '[JSON] String
 
-type ApiStatus = "status" :> Get '[JSON] Int
-
 serverRoot :: ServerT Api Handler
-serverRoot = search :<|> status
+serverRoot = search
 
 search :: Maybe String -> Handler (Envelope '[FooErr, BarErr] String)
 -- search :: Maybe String -> Handler (Envelope '[FooErr] String)
@@ -275,9 +273,6 @@ search maybeQ = do
     Just "hello" -> pureErrEnvelope BarErr
     Just "Hello" -> pureSuccEnvelope "good"
     _ -> pureErrEnvelope FooErr
-
-status :: Handler Int
-status = pure 1
 
 -- | Given a 'Config', this returns a Wai 'Application'.
 app :: Application
