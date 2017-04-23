@@ -10,6 +10,7 @@
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -24,6 +25,7 @@ import Data.Aeson
        (FromJSON(parseJSON), ToJSON(toJSON), Value)
 import Data.Aeson.Types (Parser)
 import Data.Functor.Identity (Identity(Identity, runIdentity))
+import Data.Typeable (Typeable)
 import GHC.TypeLits (Nat, type (+))
 import Text.Read (Read(readPrec), ReadPrec)
 
@@ -52,6 +54,7 @@ type family RImage (rs :: [k]) (ss :: [k]) :: [Nat] where
 data Union (f :: u -> *) (as :: [u]) where
   This :: !(f a) -> Union f (a ': as)
   That :: !(Union f as) -> Union f (a ': as)
+  deriving (Typeable)
 
 -- | Case analysis for unions.
 union :: (Union f as -> c) -> (f a -> c) -> Union f (a ': as) -> c
