@@ -39,6 +39,11 @@ pureErrEnvelope = pure . toErrEnvelope
 pureSuccEnvelope :: Applicative m => a -> m (Envelope es a)
 pureSuccEnvelope = pure . toSuccEnvelope
 
+-- | Case analysis for 'Envelope's.
+envelope :: (OpenUnion es -> c) -> (a -> c) -> Envelope es a -> c
+envelope f _ (ErrEnvelope es) = f es
+envelope _ f (SuccEnvelope a) = f a
+
 instance (ToJSON (OpenUnion es), ToJSON a) => ToJSON (Envelope es a) where
   toJSON :: Envelope es a -> Value
   toJSON (ErrEnvelope es) = object ["err" .= es]
@@ -86,3 +91,4 @@ instance Semigroup (Envelope es a) where
 
   stimes :: Integral b => b -> Envelope es a -> Envelope es a
   stimes = stimesIdempotent
+

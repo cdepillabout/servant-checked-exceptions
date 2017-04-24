@@ -81,39 +81,39 @@ _That = prism That (union Right (Left . This))
 {-# INLINE _That #-}
 
 class i ~ RIndex a as => UElem (a :: u) (as :: [u]) (i :: Nat) where
-  {-# MINIMAL uprism | ulift, umatch #-}
+  {-# MINIMAL unionPrism | unionLift, unionMatch #-}
 
-  uprism :: Prism' (Union f as) (f a)
-  uprism = prism' ulift umatch
+  unionPrism :: Prism' (Union f as) (f a)
+  unionPrism = prism' unionLift unionMatch
 
-  ulift :: f a -> Union f as
-  ulift = review uprism
+  unionLift :: f a -> Union f as
+  unionLift = review unionPrism
 
-  umatch :: Union f as -> Maybe (f a)
-  umatch = preview uprism
+  unionMatch :: Union f as -> Maybe (f a)
+  unionMatch = preview unionPrism
 
 instance UElem a (a ': as) 0 where
-  uprism :: Prism' (Union f (a ': as)) (f a)
-  uprism = _This
-  {-# INLINE uprism #-}
+  unionPrism :: Prism' (Union f (a ': as)) (f a)
+  unionPrism = _This
+  {-# INLINE unionPrism #-}
 
 instance {-# OVERLAPPABLE #-} (RIndex a (b ': as) ~ n, UElem a as i, n ~ (1 + i))
     => UElem a (b ': as) n where
-  uprism :: Prism' (Union f (b ': as)) (f a)
-  uprism = _That . uprism
-  {-# INLINE uprism #-}
+  unionPrism :: Prism' (Union f (b ': as)) (f a)
+  unionPrism = _That . unionPrism
+  {-# INLINE unionPrism #-}
 
 type OpenUnion = Union Identity
 
-openUnion :: forall a as . UElem a as (RIndex a as) => Prism' (OpenUnion as) a
-openUnion = uprism . iso runIdentity Identity
-{-# INLINE openUnion #-}
+openUnionPrism :: forall a as . UElem a as (RIndex a as) => Prism' (OpenUnion as) a
+openUnionPrism = unionPrism . iso runIdentity Identity
+{-# INLINE openUnionPrism #-}
 
-matchOpenUnion :: forall a as . UElem a as (RIndex a as) => OpenUnion as -> Maybe a
-matchOpenUnion = preview openUnion
+openUnionMatch :: forall a as . UElem a as (RIndex a as) => OpenUnion as -> Maybe a
+openUnionMatch = preview openUnionPrism
 
 openUnionLift :: UElem a as (RIndex a as) => a -> OpenUnion as
-openUnionLift = review openUnion
+openUnionLift = review openUnionPrism
 
 type IsMember a as = UElem a as (RIndex a as)
 

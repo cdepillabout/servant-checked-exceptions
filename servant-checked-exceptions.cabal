@@ -34,6 +34,7 @@ library
                      , lens
                      , natural-transformation
                      , servant
+                     , servant-client
                      , servant-server
                      -- This can be moved to the executable
                      , text
