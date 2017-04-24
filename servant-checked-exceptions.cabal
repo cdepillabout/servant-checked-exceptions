@@ -36,6 +36,7 @@ library
                      , natural-transformation
                      , servant
                      , servant-client
+                     , servant-docs
                      , servant-server
                      -- This can be moved to the executable
                      , text
