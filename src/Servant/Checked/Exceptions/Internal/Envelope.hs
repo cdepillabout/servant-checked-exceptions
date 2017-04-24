@@ -105,6 +105,7 @@ deriving instance (Data (OpenUnion es), Data a, Typeable es) => Data (Envelope e
 deriving instance (Eq (OpenUnion es), Eq a) => Eq (Envelope es a)
 deriving instance (Ord (OpenUnion es), Ord a) => Ord (Envelope es a)
 deriving instance (Read (OpenUnion es), Read a) => Read (Envelope es a)
+deriving instance (Show (OpenUnion es), Show a) => Show (Envelope es a)
 deriving instance (Typeable (OpenUnion es), Typeable a) => Typeable (Envelope es a)
 
 instance Applicative (Envelope es) where
