@@ -6,12 +6,14 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Servant.Checked.Exceptions.Internal.Envelope where
 
 import Control.Applicative ((<|>))
+import Control.Lens (Prism, Prism', preview, prism)
 import Control.Monad.Fix (MonadFix(mfix))
 import Data.Aeson
        (FromJSON(parseJSON), ToJSON(toJSON), Value, (.=), (.:), object,
@@ -22,7 +24,8 @@ import Data.Semigroup (Semigroup((<>), stimes), stimesIdempotent)
 import Data.Typeable (Typeable)
 import GHC.Generics (Generic)
 
-import Servant.Checked.Exceptions.Internal.Union (IsMember, OpenUnion, openUnionLift)
+import Servant.Checked.Exceptions.Internal.Union
+       (IsMember, OpenUnion, openUnionLift, openUnionPrism)
 
 data Envelope es a = ErrEnvelope (OpenUnion es) | SuccEnvelope a
   deriving (Foldable, Functor, Generic, Traversable)
@@ -43,6 +46,33 @@ pureSuccEnvelope = pure . toSuccEnvelope
 envelope :: (OpenUnion es -> c) -> (a -> c) -> Envelope es a -> c
 envelope f _ (ErrEnvelope es) = f es
 envelope _ f (SuccEnvelope a) = f a
+
+-- | Just like 'fromEither' but for 'Envelope'.
+fromEnvelope :: (OpenUnion es -> a) -> Envelope es a -> a
+fromEnvelope f = envelope f id
+
+envelopeToEither :: Envelope es a -> Either (OpenUnion es) a
+envelopeToEither (ErrEnvelope es) = Left es
+envelopeToEither (SuccEnvelope a) = Right a
+
+eitherToEnvelope :: Either (OpenUnion es) a -> Envelope es a
+eitherToEnvelope (Left es) = ErrEnvelope es
+eitherToEnvelope (Right a) = SuccEnvelope a
+
+_SuccEnvelope :: Prism (Envelope es a) (Envelope es b) a b
+_SuccEnvelope = prism SuccEnvelope $ envelope (Left . ErrEnvelope) Right
+
+_ErrEnvelope :: Prism (Envelope es a) (Envelope es' a) (OpenUnion es) (OpenUnion es')
+_ErrEnvelope = prism ErrEnvelope $ envelope Right (Left . SuccEnvelope)
+
+_ErrEnvelopeErr :: forall e es a. IsMember e es => Prism' (Envelope es a) e
+_ErrEnvelopeErr = _ErrEnvelope . openUnionPrism
+
+errEnvelopeMatch
+  :: forall e es a.
+     IsMember e es
+  => Envelope es a -> Maybe e
+errEnvelopeMatch = preview _ErrEnvelopeErr
 
 instance (ToJSON (OpenUnion es), ToJSON a) => ToJSON (Envelope es a) where
   toJSON :: Envelope es a -> Value
