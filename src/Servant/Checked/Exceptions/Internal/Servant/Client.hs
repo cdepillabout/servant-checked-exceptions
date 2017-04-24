@@ -18,10 +18,11 @@
 module Servant.Checked.Exceptions.Internal.Servant.Client where
 
 import Data.Proxy (Proxy(Proxy))
-import Servant.API ((:>))
+import Servant.API (Verb, (:>))
 import Servant.Client (HasClient(clientWithRoute, Client))
 import Servant.Common.Req (Req)
 
+import Servant.Checked.Exceptions.Internal.Envelope (Envelope)
 import Servant.Checked.Exceptions.Internal.Servant.API
        (Throws, Throwing)
 
@@ -38,21 +39,24 @@ import Servant.Checked.Exceptions.Internal.Servant.API
 instance (HasClient (Throwing '[e] :> api)) => HasClient (Throws e :> api) where
   type Client (Throws e :> api) = Client (Throwing '[e] :> api)
 
-  clientWithRoute :: Proxy (Throws e :> api) -> Req -> Client (Throwing '[e] :> api)
-  clientWithRoute = undefined
+  clientWithRoute
+    :: Proxy (Throws e :> api)
+    -> Req
+    -> Client (Throwing '[e] :> api)
+  clientWithRoute Proxy = clientWithRoute (Proxy :: Proxy (Throwing '[e] :> api))
 
--- instance (HasClient (Verb method status ctypes (Envelope es a)) context) =>
---     HasClient (Throwing es :> Verb method status ctypes a) context where
+instance (HasClient (Verb method status ctypes (Envelope es a))) =>
+    HasClient (Throwing es :> Verb method status ctypes a) where
 
---   type ServerT (Throwing es :> Verb method status ctypes a) m =
---     ServerT (Verb method status ctypes (Envelope es a)) m
+  type Client (Throwing es :> Verb method status ctypes a) =
+    Client (Verb method status ctypes (Envelope es a))
 
---   route
---     :: Proxy (Throwing es :> Verb method status ctypes a)
---     -> Context context
---     -> Delayed env (ServerT (Verb method status ctypes (Envelope es a)) Handler)
---     -> Router env
---   route _ = route (Proxy :: Proxy (Verb method status ctypes (Envelope es a)))
+  clientWithRoute
+    :: Proxy (Throwing es :> Verb method status ctypes a)
+    -> Req
+    -> Client (Verb method status ctypes (Envelope es a))
+  clientWithRoute Proxy =
+    clientWithRoute (Proxy :: Proxy (Verb method status ctypes (Envelope es a)))
 
 -- instance (HasClient (Throwing (Snoc es e) :> api) context) =>
 --     HasClient (Throwing es :> Throws e :> api) context where

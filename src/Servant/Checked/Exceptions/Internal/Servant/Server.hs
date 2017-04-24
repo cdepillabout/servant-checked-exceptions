@@ -22,6 +22,7 @@ import Servant
 import Servant.Checked.Exceptions.Internal.Envelope (Envelope)
 import Servant.Checked.Exceptions.Internal.Servant.API
        (Throws, Throwing)
+import Servant.Checked.Exceptions.Internal.Util (Snoc)
 
 -- TODO: Make sure to also account for when headers are being used.
 
@@ -63,7 +64,3 @@ instance (HasServer (Throwing (Snoc es e) :> api) context) =>
     -> Delayed env (ServerT (Throwing (Snoc es e) :> api) Handler)
     -> Router env
   route _ = route (Proxy :: Proxy (Throwing (Snoc es e) :> api))
-
-type family Snoc (as :: [k]) (b :: k) where
-  Snoc '[] b = '[b]
-  Snoc (a ': as) b = (a ': Snoc as b)
