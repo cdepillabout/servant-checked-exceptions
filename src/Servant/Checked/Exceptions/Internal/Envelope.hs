@@ -137,4 +137,3 @@ instance Semigroup (Envelope es a) where
 
   stimes :: Integral b => b -> Envelope es a -> Envelope es a
   stimes = stimesIdempotent
-
