@@ -103,19 +103,34 @@ instance {-# OVERLAPPABLE #-} (RIndex a (b ': as) ~ n, UElem a as i, n ~ (1 + i)
   unionPrism = _That . unionPrism
   {-# INLINE unionPrism #-}
 
+type IsMember a as = UElem a as (RIndex a as)
+
 type OpenUnion = Union Identity
 
-openUnionPrism :: forall a as . UElem a as (RIndex a as) => Prism' (OpenUnion as) a
+-- | Case analysis for 'OpenUnion'.
+openUnion
+  :: forall as a c.
+     (OpenUnion as -> c) -> (a -> c) -> OpenUnion (a ': as) -> c
+openUnion onThat onThis = union onThat (onThis . runIdentity)
+
+openUnionPrism
+  :: forall a as.
+     IsMember a as
+  => Prism' (OpenUnion as) a
 openUnionPrism = unionPrism . iso runIdentity Identity
 {-# INLINE openUnionPrism #-}
 
-openUnionMatch :: forall a as . UElem a as (RIndex a as) => OpenUnion as -> Maybe a
+openUnionMatch
+  :: forall a as.
+     IsMember a as
+  => OpenUnion as -> Maybe a
 openUnionMatch = preview openUnionPrism
 
-openUnionLift :: UElem a as (RIndex a as) => a -> OpenUnion as
+openUnionLift
+  :: forall a as.
+     IsMember a as
+  => a -> OpenUnion as
 openUnionLift = review openUnionPrism
-
-type IsMember a as = UElem a as (RIndex a as)
 
 instance NFData (Union f '[]) where
   rnf = absurdUnion
