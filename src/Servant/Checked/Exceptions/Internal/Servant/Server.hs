@@ -56,7 +56,7 @@ instance (HasServer (Throwing (Snoc es e) :> api) context) =>
     HasServer (Throwing es :> Throws e :> api) context where
 
   type ServerT (Throwing es :> Throws e :> api) m =
-    ServerT (Throwing (Snoc es e) :> api ) m
+    ServerT (Throwing (Snoc es e) :> api) m
 
   route
     :: Proxy (Throwing es :> Throws e :> api)
