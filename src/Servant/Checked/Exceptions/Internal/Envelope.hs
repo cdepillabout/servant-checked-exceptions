@@ -51,6 +51,22 @@ envelope _ f (SuccEnvelope a) = f a
 fromEnvelope :: (OpenUnion es -> a) -> Envelope es a -> a
 fromEnvelope f = envelope f id
 
+-- | Lifted version of 'fromEnvelope'.
+fromEnvelopeM
+  :: Applicative m
+  => (OpenUnion es -> m a) -> Envelope es a -> m a
+fromEnvelopeM f = envelope f pure
+
+-- | Flipped version of 'fromEnvelope'.
+fromEnvelopeOr :: Envelope es a -> (OpenUnion es -> a) -> a
+fromEnvelopeOr = flip fromEnvelope
+
+-- | Flipped version of 'fromEnvelopeM'.
+fromEnvelopeOrM
+  :: Applicative m
+  => Envelope es a -> (OpenUnion es -> m a) -> m a
+fromEnvelopeOrM = flip fromEnvelopeM
+
 envelopeToEither :: Envelope es a -> Either (OpenUnion es) a
 envelopeToEither (ErrEnvelope es) = Left es
 envelopeToEither (SuccEnvelope a) = Right a
