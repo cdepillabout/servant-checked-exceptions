@@ -1,14 +1,10 @@
--- {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
--- {-# LANGUAGE EmptyCase #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
--- {-# LANGUAGE GADTs #-}
 {-# LANGUAGE InstanceSigs #-}
--- {-# LANGUAGE MultiParamTypeClasses #-}
--- {-# LANGUAGE OverloadedStrings #-}
--- {-# LANGUAGE PolyKinds #-}
--- {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}

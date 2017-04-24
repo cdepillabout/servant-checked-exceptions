@@ -27,16 +27,18 @@ import Network.Wai.Handler.Warp (run)
 import Servant
        (Handler, HasServer(..), JSON, Post, QueryParam, Server, ServerT,
         (:>), enter, serve)
+import Servant.Client (Client, ClientM, client)
 import Text.Read (readMaybe)
 
 -- This changes in servant-0.10
 -- import Control.Natural ((:~>)(NT))
 import Servant.Utils.Enter ((:~>)(Nat))
 
-import Servant.Checked.Exceptions.Internal (Envelope, Throws, pureErrEnvelope, pureSuccEnvelope)
+import Servant.Checked.Exceptions.Internal (Envelope, Throwing, Throws, pureErrEnvelope, pureSuccEnvelope)
 
-defaultMainApi :: IO ()
-defaultMainApi = run 8201 app
+---------
+-- API --
+---------
 
 type Api = ApiSearch
 
@@ -47,11 +49,15 @@ type ApiSearch =
   Throws BarErr :>
   Post '[JSON] String
 
-serverRoot :: ServerT Api Handler
-serverRoot = search
+------------
+-- Server --
+------------
 
-search :: Maybe String -> Handler (Envelope '[FooErr, BarErr] String)
-search maybeQ =
+serverRoot :: ServerT Api Handler
+serverRoot = postSearchServer
+
+postSearchServer :: Maybe String -> Handler (Envelope '[FooErr, BarErr] String)
+postSearchServer maybeQ =
   case maybeQ of
     Just "hello" -> pureErrEnvelope BarErr
     Just "Hello" -> pureSuccEnvelope "good"
@@ -70,6 +76,17 @@ apiServer = enter natTrans serverRoot
 
     trans :: forall a. Handler a -> Handler a
     trans = id
+
+defaultMainServer :: IO ()
+defaultMainServer = run 8201 app
+
+------------
+-- Client --
+------------
+
+postSearchClient :: Maybe String -> ClientM (Envelope '[FooErr, BarErr] String)
+-- postSearchClient :: Maybe String -> Client (Throwing '[FooErr, BarErr] :> Post '[JSON] String)
+postSearchClient = client (Proxy :: Proxy Api)
 
 ------------
 -- Errors --
