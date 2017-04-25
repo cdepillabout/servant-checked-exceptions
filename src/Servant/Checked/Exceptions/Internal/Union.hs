@@ -38,11 +38,6 @@ type family RIndex (r :: k) (rs :: [k]) :: Nat where
   RIndex r (r ': rs) = 0
   RIndex r (s ': rs) = 1 + (RIndex r rs)
 
--- | A partial relation that gives the indices of a sublist in a larger list.
-type family RImage (rs :: [k]) (ss :: [k]) :: [Nat] where
-  RImage '[] ss = '[]
-  RImage (r ': rs) ss = RIndex r ss ': RImage rs ss
-
 -----------------------------
 -- This is from Data.Union --
 -----------------------------
@@ -58,19 +53,17 @@ data Union (f :: u -> *) (as :: [u]) where
 
 -- | Case analysis for unions.
 union :: (Union f as -> c) -> (f a -> c) -> Union f (a ': as) -> c
-union onThat onThis = \case
-  This a -> onThis a
-  That u -> onThat u
+union _ onThis (This a) = onThis a
+union onThat _ (That u) = onThat u
 
 -- | Since a union with an empty list of labels is uninhabited, we
 -- can recover any type from it.
 absurdUnion :: Union f '[] -> a
-absurdUnion = \case{}
+absurdUnion u = case u of {}
 
 umap :: (forall a . f a -> g a) -> Union f as -> Union g as
-umap f = \case
-  This a -> This (f a)
-  That u -> That (umap f u)
+umap f (This a) = This $ f a
+umap f (That u) = That $ umap f u
 
 _This :: Prism (Union f (a ': as)) (Union f (b ': as)) (f a) (f b)
 _This = prism This (union (Left . That) Right)

@@ -31,7 +31,10 @@ library
                      , Servant.Checked.Exceptions.Internal.Util
   build-depends:       base >= 4.8 && < 5
                      , aeson
+                     , bytestring
                      , deepseq
+                     , http-api-data
+                     , http-media
                      , lens
                      , natural-transformation
                      , servant
