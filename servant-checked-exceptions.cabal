@@ -1,6 +1,6 @@
 name:                servant-checked-exceptions
 version:             0.1.0.3
-synopsis:            Embed a directory of static files in your Servant server
+synopsis:            Checked exceptions for Servant APIs.
 description:         Please see <https://github.com/cdepillabout/servant-checked-exceptions#readme README.md>.
 homepage:            https://github.com/cdepillabout/servant-checked-exceptions
 license:             BSD3

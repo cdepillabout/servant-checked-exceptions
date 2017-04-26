@@ -28,7 +28,7 @@ Portability :  unknown
 This module defines extensible sum-types.  This is similar to how
 <https://hackage.haskell.org/package/vinyl vinyl> defines extensible records.
 
-This is used extensively in the definition of the 'Evenlope' type in
+This is used extensively in the definition of the 'Envelope' type in
 "Servant.Checked.Exceptions.Internal.Envelope".
 
 A large portion of the code from this module was taken from the

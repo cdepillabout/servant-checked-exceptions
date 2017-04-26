@@ -88,12 +88,12 @@ import Servant.Checked.Exceptions.Internal.Union
 -- | This 'Envelope' type is a used as a wrapper around either an 'OpenUnion'
 -- with an error or a successful value.  It is similar to an @'Either' e a@,
 -- but where the @e@ is specialized to @'OpenUnion' es@.  The most important
--- different from 'Either' is the the 'FromJSON' and 'ToJSON' instances.
+-- difference from 'Either' is the the 'FromJSON' and 'ToJSON' instances.
 --
--- Given an @'Envelope' \'['String', 'Double'] '()'@, we know that the envelope
--- could be a 'SuccEnvelope' and contain '()'.  Or it could be a 'ErrEnvelope'
+-- Given an @'Envelope' \'['String', 'Double'] ()@, we know that the envelope
+-- could be a 'SuccEnvelope' and contain @()@.  Or it could be a 'ErrEnvelope'
 -- that contains /either/ a 'String' /or/ a 'Double'.  It might be simpler to
--- think of it as a type like @'Either' 'String' ('Either' 'Double' '()')@.
+-- think of it as a type like @'Either' 'String' ('Either' 'Double' ())@.
 --
 -- An 'Envelope' can be created with the 'toErrEnvelope' and 'toSuccEnvelope'
 -- functions.  The 'Prism's '_SuccEnvelope', '_ErrEnvelope', and
@@ -145,7 +145,7 @@ envelope :: (OpenUnion es -> c) -> (a -> c) -> Envelope es a -> c
 envelope f _ (ErrEnvelope es) = f es
 envelope _ f (SuccEnvelope a) = f a
 
--- | Just like 'fromEither' but for 'Envelope'.
+-- | Just like 'Data.Either.fromEither' but for 'Envelope'.
 --
 --  Here is an example of successfully matching:
 --
