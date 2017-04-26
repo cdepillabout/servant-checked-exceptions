@@ -15,6 +15,26 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
+{- |
+Module      :  Servant.Checked.Exceptions.Internal.Union
+
+Copyright   :  Dennis Gosnell 2017
+License     :  BSD3
+
+Maintainer  :  Dennis Gosnell (cdep.illabout@gmail.com)
+Stability   :  experimental
+Portability :  unknown
+
+This module defines extensible sum-types.  This is similar to how
+<https://hackage.haskell.org/package/vinyl vinyl> defines extensible records.
+
+This is used extensively in the definition of the 'Evenlope' type in
+"Servant.Checked.Exceptions.Internal.Envelope".
+
+A large portion of the code from this module was taken from the
+<https://hackage.haskell.org/package/union union> package.
+-}
+
 module Servant.Checked.Exceptions.Internal.Union
   (
   -- * Union
@@ -37,6 +57,8 @@ module Servant.Checked.Exceptions.Internal.Union
   , openUnionPrism
   , openUnionLift
   , openUnionMatch
+  -- * Setup code for doctests
+  -- $setup
   ) where
 
 -- Imports for Union stuff
