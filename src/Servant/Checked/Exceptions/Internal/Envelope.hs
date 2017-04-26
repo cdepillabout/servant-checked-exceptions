@@ -32,8 +32,12 @@ import Servant.Checked.Exceptions.Internal.Union
 -- >>> :set -XDataKinds
 -- >>> :set -XTypeOperators
 -- >>> import Control.Lens (preview, review)
+-- >>> import Data.Aeson (encode)
+-- >>> import Data.ByteString.Lazy.Char8 (hPutStrLn)
 -- >>> import Data.Text (Text)
+-- >>> import System.IO (stdout)
 -- >>> import Text.Read (readMaybe)
+-- >>> let putByteStrLn = hPutStrLn stdout
 
 
 -- | This 'Envelope' type is a used as a wrapper around either an 'OpenUnion'
@@ -246,11 +250,32 @@ errEnvelopeMatch
   => Envelope es a -> Maybe e
 errEnvelopeMatch = preview _ErrEnvelopeErr
 
+-- | This 'ToJSON' instance encodes an 'Envelope' as an object with one of two
+-- keys depending on whether it is a 'SuccEnvelope' or an 'ErrEnvelope'.
+--
+-- Here is an example of a 'SuccEnvelope':
+--
+-- >>> let string = "hello" :: String
+-- >>> let env = toSuccEnvelope string :: Envelope '[Double] String
+-- >>> putByteStrLn $ encode env
+-- {"data":"hello"}
+--
+-- Here is an example of a 'ErrEnvelope':
+--
+-- >>> let double = 3.5 :: Double
+-- >>> let env' = toErrEnvelope double :: Envelope '[Double] String
+-- >>> putByteStrLn $ encode env'
+-- {"err":3.5}
 instance (ToJSON (OpenUnion es), ToJSON a) => ToJSON (Envelope es a) where
   toJSON :: Envelope es a -> Value
   toJSON (ErrEnvelope es) = object ["err" .= es]
   toJSON (SuccEnvelope a) = object ["data" .= a]
 
+-- | This is only a valid instance when the 'FromJSON' instances for the @es@
+-- don't overlap.
+--
+-- For an explanation, see the documentation on the 'FromJSON' instance for
+-- 'Union'.
 instance (FromJSON (OpenUnion es), FromJSON a) => FromJSON (Envelope es a) where
   parseJSON :: Value -> Parser (Envelope es a)
   parseJSON = withObject "Envelope" $ \obj ->
