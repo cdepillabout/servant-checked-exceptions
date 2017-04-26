@@ -146,15 +146,27 @@ _That :: Prism (Union f (a ': as)) (Union f (a ': bs)) (Union f as) (Union f bs)
 _That = prism That (union Right (Left . This))
 {-# INLINE _That #-}
 
+-- | @'UElem' a as i@ provides a way to potentially get an @f a@ out of a
+-- @'Union' f as@ ('unionMatch').  It also provides a way to create a
+-- @'Union' f as@ from an @f a@ ('unionLift').
+--
+-- This is safe because of the 'RIndex' contraint. This 'RIndex' constraint
+-- tells us that there /actually is/ an @a@ in @as@ at index @i@.
+--
+-- As an end-user, you should never need to implement an additional instance of
+-- this typeclass.
 class i ~ RIndex a as => UElem (a :: u) (as :: [u]) (i :: Nat) where
   {-# MINIMAL unionPrism | unionLift, unionMatch #-}
 
+  -- | This is implemented as @'prism\'' 'unionLift' 'unionMatch'@.
   unionPrism :: Prism' (Union f as) (f a)
   unionPrism = prism' unionLift unionMatch
 
+  -- | This is implemented as @'review' 'unionPrism'@.
   unionLift :: f a -> Union f as
   unionLift = review unionPrism
 
+  -- | This is implemented as @'preview' 'unionPrism'@.
   unionMatch :: Union f as -> Maybe (f a)
   unionMatch = preview unionPrism
 
@@ -169,16 +181,53 @@ instance {-# OVERLAPPABLE #-} (RIndex a (b ': as) ~ n, UElem a as i, n ~ (1 + i)
   unionPrism = _That . unionPrism
   {-# INLINE unionPrism #-}
 
-type IsMember a as = UElem a as (RIndex a as)
+-- | This is a helpful 'Constraint' synonym to assert that @a@ is a member of
+-- @as@.
+type IsMember (a :: u) (as :: [u]) = UElem a as (RIndex a as)
 
+-- | We can use @'Union' 'Identity'@ as a standard open sum type.
 type OpenUnion = Union Identity
 
 -- | Case analysis for 'OpenUnion'.
+--
+--  Here is an example of successfully matching:
+--
+-- >>> let string = "hello" :: String
+-- >>> let o = openUnionLift string :: OpenUnion '[String, Int]
+-- >>> openUnion (const "not a String") id o
+-- "hello"
+--
+-- Here is an example of unsuccessfully matching:
+--
+-- >>> let double = 3.3 :: Double
+-- >>> let p = openUnionLift double :: OpenUnion '[String, Double, Int]
+-- >>> openUnion (const "not a String") id p
+-- "not a String"
 openUnion
   :: forall as a c.
      (OpenUnion as -> c) -> (a -> c) -> OpenUnion (a ': as) -> c
 openUnion onThat onThis = union onThat (onThis . runIdentity)
 
+-- | This is similar to 'fromMaybe' for an 'OpenUnion'.
+--
+--  Here is an example of successfully matching:
+--
+-- >>> let string = "hello" :: String
+-- >>> let o = openUnionLift string :: OpenUnion '[String, Int]
+-- >>> fromOpenUnion (const "not a String") o
+-- "hello"
+--
+-- Here is an example of unsuccessfully matching:
+--
+-- >>> let double = 3.3 :: Double
+-- >>> let p = openUnionLift double :: OpenUnion '[String, Double, Int]
+-- >>> fromOpenUnion (const "not a String") p
+-- "not a String"
+fromOpenUnion
+  :: (OpenUnion as -> a) -> OpenUnion (a ': as) -> a
+fromOpenUnion onThat = openUnion onThat id
+
+-- | Just like 'unionPrism' but for 'OpenUnion'.
 openUnionPrism
   :: forall a as.
      IsMember a as
@@ -186,17 +235,39 @@ openUnionPrism
 openUnionPrism = unionPrism . iso runIdentity Identity
 {-# INLINE openUnionPrism #-}
 
-openUnionMatch
-  :: forall a as.
-     IsMember a as
-  => OpenUnion as -> Maybe a
-openUnionMatch = preview openUnionPrism
-
+-- | Just like 'unionLift' but for 'OpenUnion'.
+--
+-- Creating an 'OpenUnion':
+--
+-- >>> let string = "hello" :: String
+-- >>> openUnionLift string :: OpenUnion '[Double, String, Int]
+-- Identity "hello"
 openUnionLift
   :: forall a as.
      IsMember a as
   => a -> OpenUnion as
 openUnionLift = review openUnionPrism
+
+-- | Just like 'unionMatch' but for 'OpenUnion'.
+--
+-- Successful matching:
+--
+-- >>> let string = "hello" :: String
+-- >>> let o = openUnionLift string :: OpenUnion '[Double, String, Int]
+-- >>> openUnionMatch o :: Maybe String
+-- Just "hello"
+--
+-- Failure matching:
+--
+-- >>> let double = 3.3 :: Double
+-- >>> let p = openUnionLift double :: OpenUnion '[Double, String]
+-- >>> openUnionMatch p :: Maybe String
+-- Nothing
+openUnionMatch
+  :: forall a as.
+     IsMember a as
+  => OpenUnion as -> Maybe a
+openUnionMatch = preview openUnionPrism
 
 instance NFData (Union f '[]) where
   rnf = absurdUnion
