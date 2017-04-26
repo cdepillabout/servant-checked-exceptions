@@ -27,11 +27,13 @@ import Data.Aeson.Types (Parser)
 import Data.Functor.Identity (Identity(Identity, runIdentity))
 import Data.Typeable (Typeable)
 import GHC.TypeLits (Nat, type (+))
-import Text.Read (Read(readPrec), ReadPrec)
+import Text.Read (Read(readPrec), ReadPrec, (<++))
 
 -- $setup
 -- >>> :set -XDataKinds
 -- >>> :set -XTypeOperators
+-- >>> import Data.Text (Text)
+-- >>> import Text.Read (readMaybe)
 
 ---------------------------------------
 -- This is from Data.Vinyl.TypeLevel --
@@ -158,7 +160,7 @@ _That = prism That (union Right (Left . This))
 class i ~ RIndex a as => UElem (a :: u) (as :: [u]) (i :: Nat) where
   {-# MINIMAL unionPrism | unionLift, unionMatch #-}
 
-  -- | This is implemented as @'prism\'' 'unionLift' 'unionMatch'@.
+  -- | This is implemented as @'prism'' 'unionLift' 'unionMatch'@.
   unionPrism :: Prism' (Union f as) (f a)
   unionPrism = prism' unionLift unionMatch
 
@@ -286,10 +288,48 @@ instance Read (Union f '[]) where
   readsPrec :: Int -> ReadS (Union f '[])
   readsPrec _ _ = []
 
--- | TODO: This is only a valid instance when the 'Read' instances for the types don't overlap.
+-- | This is only a valid instance when the 'Read' instances for the types
+-- don't overlap.
+--
+-- For instance, @3.5@ can only be read as a 'Double', not as a 'String'.
+-- Oppositely, @\"hello\"@ can only be read as a 'String', not as a 'Double'.
+--
+-- >>> let o = readMaybe "Identity 3.5" :: Maybe (Union Identity '[Double, String])
+-- >>> o
+-- Just (Identity 3.5)
+-- >>> o >>= openUnionMatch :: Maybe Double
+-- Just 3.5
+-- >>> o >>= openUnionMatch :: Maybe String
+-- Nothing
+--
+-- >>> let p = readMaybe "Identity \"hello\"" :: Maybe (Union Identity '[Double, String])
+-- >>> p
+-- Just (Identity "hello")
+-- >>> p >>= openUnionMatch :: Maybe Double
+-- Nothing
+-- >>> p >>= openUnionMatch :: Maybe String
+-- Just "hello"
+--
+-- However, @\"hello\"@ can be 'read' as both a 'String' and 'Text'.
+--
+-- >>> let q = readMaybe "Identity \"hello\"" :: Maybe (Union Identity '[String, Text])
+-- >>> q
+-- Just (Identity "hello")
+-- >>> q >>= openUnionMatch :: Maybe String
+-- Just "hello"
+-- >>> q >>= openUnionMatch :: Maybe Text
+-- Nothing
+--
+-- >>> let r = readMaybe "Identity \"hello\"" :: Maybe (Union Identity '[Text, String])
+-- >>> r
+-- Just (Identity "hello")
+-- >>> r >>= openUnionMatch :: Maybe String
+-- Nothing
+-- >>> r >>= openUnionMatch :: Maybe Text
+-- Just "hello"
 instance (Read (f a), Read (Union f as)) => Read (Union f (a ': as)) where
   readPrec :: ReadPrec (Union f (a ': as))
-  readPrec = fmap This readPrec <|> fmap That readPrec
+  readPrec = fmap This readPrec <++ fmap That readPrec
 
 instance Eq (Union f '[]) where
   (==) = absurdUnion
@@ -322,7 +362,10 @@ instance FromJSON (Union f '[]) where
   parseJSON :: Value -> Parser (Union f '[])
   parseJSON _ = fail "Value of Union f '[] can never be created"
 
--- | TODO: This is only a valid instance when the 'Read' instances for the types don't overlap.
+-- | This is only a valid instance when the 'FromJSON' instances for the types
+-- don't overlap.
+--
+-- This is similar to the 'Read' instance.
 instance (FromJSON (f a), FromJSON (Union f as)) => FromJSON (Union f (a ': as)) where
   parseJSON :: Value -> Parser (Union f (a ': as))
   parseJSON val = fmap This (parseJSON val) <|> fmap That (parseJSON val)
