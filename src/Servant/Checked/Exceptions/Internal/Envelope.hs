@@ -13,7 +13,7 @@
 module Servant.Checked.Exceptions.Internal.Envelope where
 
 import Control.Applicative ((<|>))
-import Control.Lens (Prism, Prism', preview, prism)
+import Control.Lens (Iso, Prism, Prism', iso, preview, prism)
 import Control.Monad.Fix (MonadFix(mfix))
 import Data.Aeson
        (FromJSON(parseJSON), ToJSON(toJSON), Value, (.=), (.:), object,
@@ -27,27 +27,89 @@ import GHC.Generics (Generic)
 import Servant.Checked.Exceptions.Internal.Union
        (IsMember, OpenUnion, openUnionLift, openUnionPrism)
 
+
+-- $setup
+-- >>> :set -XDataKinds
+-- >>> :set -XTypeOperators
+-- >>> import Control.Lens (preview, review)
+-- >>> import Data.Text (Text)
+-- >>> import Text.Read (readMaybe)
+
+
+-- | This 'Envelope' type is a used as a wrapper around either an 'OpenUnion'
+-- with an error or a successful value.  It is similar to an @'Either' e a@,
+-- but where the @e@ is specialized to @'OpenUnion' es@.  The most important
+-- different from 'Either' is the the 'FromJSON' and 'ToJSON' instances.
+--
+-- Given an @'Envelope' \'['String', 'Double'] '()'@, we know that the envelope
+-- could be a 'SuccEnvelope' and contain '()'.  Or it could be a 'ErrEnvelope'
+-- that contains /either/ a 'String' /or/ a 'Double'.  It might be simpler to
+-- think of it as a type like @'Either' 'String' ('Either' 'Double' '()')@.
+--
+-- An 'Envelope' can be created with the 'toErrEnvelope' and 'toSuccEnvelope'
+-- functions.  The 'Prism's '_SuccEnvelope', '_ErrEnvelope', and
+-- '_ErrEnvelopeErr' can be used to get values out of an 'Envelope'.
 data Envelope es a = ErrEnvelope (OpenUnion es) | SuccEnvelope a
   deriving (Foldable, Functor, Generic, Traversable)
 
+-- | Create an 'ErrEnvelope' from a member of the 'OpenUnion'.
+--
+-- For instance, here is how to create an 'ErrEnvelope' that contains a
+-- 'Double':
+--
+-- >>> let double = 3.5 :: Double
+-- >>> toErrEnvelope double :: Envelope '[String, Double, Int] ()
+-- ErrEnvelope (Identity 3.5)
 toErrEnvelope :: IsMember e es => e -> Envelope es a
 toErrEnvelope = ErrEnvelope . openUnionLift
 
+-- | This is a function to create a 'SuccEnvelope'.
+--
+-- >>> toSuccEnvelope "hello" :: Envelope '[Double] String
+-- SuccEnvelope "hello"
 toSuccEnvelope :: a -> Envelope es a
 toSuccEnvelope = SuccEnvelope
 
+-- | 'pureErrEnvelope' is 'toErrEnvelope' lifted up to an 'Applicative'.
 pureErrEnvelope :: (Applicative m, IsMember e es) => e -> m (Envelope es a)
 pureErrEnvelope = pure . toErrEnvelope
 
+-- | 'pureSuccEnvelope' is 'toSuccEnvelope' lifted up to an 'Applicative'.
 pureSuccEnvelope :: Applicative m => a -> m (Envelope es a)
 pureSuccEnvelope = pure . toSuccEnvelope
 
 -- | Case analysis for 'Envelope's.
+--
+--  Here is an example of matching on a 'SuccEnvelope':
+--
+-- >>> let env = toSuccEnvelope "hello" :: Envelope '[Double, Int] String
+-- >>> envelope (const "not a String") id env
+-- "hello"
+--
+-- Here is an example of matching on a 'ErrEnvelope':
+--
+-- >>> let double = 3.5 :: Double
+-- >>> let env' = toErrEnvelope double :: Envelope '[Double, Int] String
+-- >>> envelope (const "not a String") id env'
+-- "not a String"
 envelope :: (OpenUnion es -> c) -> (a -> c) -> Envelope es a -> c
 envelope f _ (ErrEnvelope es) = f es
 envelope _ f (SuccEnvelope a) = f a
 
 -- | Just like 'fromEither' but for 'Envelope'.
+--
+--  Here is an example of successfully matching:
+--
+-- >>> let env = toSuccEnvelope "hello" :: Envelope '[Double, Int] String
+-- >>> fromEnvelope (const "not a String") env
+-- "hello"
+--
+-- Here is an example of unsuccessfully matching:
+--
+-- >>> let double = 3.5 :: Double
+-- >>> let env' = toErrEnvelope double :: Envelope '[Double, Int] String
+-- >>> fromEnvelope (const "not a String") env'
+-- "not a String"
 fromEnvelope :: (OpenUnion es -> a) -> Envelope es a -> a
 fromEnvelope f = envelope f id
 
@@ -67,14 +129,39 @@ fromEnvelopeOrM
   => Envelope es a -> (OpenUnion es -> m a) -> m a
 fromEnvelopeOrM = flip fromEnvelopeM
 
+-- | Convert an 'Envelope' to an 'Either'.
 envelopeToEither :: Envelope es a -> Either (OpenUnion es) a
 envelopeToEither (ErrEnvelope es) = Left es
 envelopeToEither (SuccEnvelope a) = Right a
 
+-- | Convert an 'Either' to an 'Envelope'.
 eitherToEnvelope :: Either (OpenUnion es) a -> Envelope es a
 eitherToEnvelope (Left es) = ErrEnvelope es
 eitherToEnvelope (Right a) = SuccEnvelope a
 
+-- | Lens-compatible 'Iso' from 'Envelope' to 'Either'.
+isoEnvelopeEither :: Iso (Envelope es a) (Envelope fs b) (Either (OpenUnion es) a) (Either (OpenUnion fs) b)
+isoEnvelopeEither = iso envelopeToEither eitherToEnvelope
+
+-- | Lens-compatible 'Prism' to pull out an @a@ from a 'SuccEnvelope'.
+--
+-- Use '_SuccEnvelope' to construct an 'Envelope':
+--
+-- >>> review _SuccEnvelope "hello" :: Envelope '[Double] String
+-- SuccEnvelope "hello"
+--
+
+-- Use '_This' to try to destruct a 'Union' into a @f a@:
+--
+-- >>> let u = This (Identity "hello") :: Union Identity '[String, Int]
+-- >>> preview _This u :: Maybe (Identity String)
+-- Just (Identity "hello")
+--
+-- Use '_This' to try to destruct a 'Union' into a @f a@ (unsuccessfully):
+--
+-- >>> let v = That (This (Identity 3.3)) :: Union Identity '[String, Double, Int]
+-- >>> preview _This v :: Maybe (Identity String)
+-- Nothing
 _SuccEnvelope :: Prism (Envelope es a) (Envelope es b) a b
 _SuccEnvelope = prism SuccEnvelope $ envelope (Left . ErrEnvelope) Right
 
