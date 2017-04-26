@@ -41,7 +41,6 @@ library
                      , servant-client
                      , servant-docs
                      , servant-server
-                     -- This can be moved to the executable
                      , text
                      , wai
                      , warp
