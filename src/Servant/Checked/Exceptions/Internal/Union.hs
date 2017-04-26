@@ -29,11 +29,26 @@ import Data.Typeable (Typeable)
 import GHC.TypeLits (Nat, type (+))
 import Text.Read (Read(readPrec), ReadPrec)
 
+-- $setup
+-- >>> :set -XDataKinds
+-- >>> :set -XTypeOperators
+
 ---------------------------------------
 -- This is from Data.Vinyl.TypeLevel --
 ---------------------------------------
 
 -- | A partial relation that gives the index of a value in a list.
+--
+-- Find the first item:
+--
+-- >>> import Data.Type.Equality ((:~:)(Refl))
+-- >>> Refl :: RIndex String '[String, Int] :~: 0
+-- Refl
+--
+-- Find the third item:
+--
+-- >>> Refl :: RIndex Char '[String, Int, Char] :~: 2
+-- Refl
 type family RIndex (r :: k) (rs :: [k]) :: Nat where
   RIndex r (r ': rs) = 0
   RIndex r (s ': rs) = 1 + (RIndex r rs)
@@ -42,7 +57,7 @@ type family RIndex (r :: k) (rs :: [k]) :: Nat where
 -- This is from Data.Union --
 -----------------------------
 
--- | A union is parameterized by a universe @u@, an interpretation @f@
+-- | A 'Union' is parameterized by a universe @u@, an interpretation @f@
 -- and a list of labels @as@. The labels of the union are given by
 -- inhabitants of the kind @u@; the type of values at any label @a ::
 -- u@ is given by its interpretation @f a :: *@.
@@ -51,7 +66,20 @@ data Union (f :: u -> *) (as :: [u]) where
   That :: !(Union f as) -> Union f (a ': as)
   deriving (Typeable)
 
--- | Case analysis for unions.
+-- | Case analysis for 'Union'.
+--
+--  Here is an example of matching on a 'This':
+--
+-- >>> let u = This (Identity "hello") :: Union Identity '[String, Int]
+-- >>> let runIdent = runIdentity :: Identity String -> String
+-- >>> union (const "not a String") runIdent u
+-- "hello"
+--
+-- Here is an example of matching on a 'That':
+--
+-- >>> let v = That (This (Identity 3.3)) :: Union Identity '[String, Double, Int]
+-- >>> union (const "not a String") runIdent v
+-- "not a String"
 union :: (Union f as -> c) -> (f a -> c) -> Union f (a ': as) -> c
 union _ onThis (This a) = onThis a
 union onThat _ (That u) = onThat u
@@ -61,14 +89,59 @@ union onThat _ (That u) = onThat u
 absurdUnion :: Union f '[] -> a
 absurdUnion u = case u of {}
 
+-- | Map over the interpretation @f@ in the 'Union'.
+--
+-- Here is an example of changing a @'Union' 'Identity' \'['String', 'Int']@ to
+-- @'Union' 'Maybe' \'['String', 'Int']@:
+--
+-- >>> let u = This (Identity "hello") :: Union Identity '[String, Int]
+-- >>> umap (Just . runIdentity) u :: Union Maybe '[String, Int]
+-- Just "hello"
 umap :: (forall a . f a -> g a) -> Union f as -> Union g as
 umap f (This a) = This $ f a
 umap f (That u) = That $ umap f u
 
+-- | Lens-compatible 'Prism' for 'This'.
+--
+-- Use '_This' to construct a 'Union':
+--
+-- >>> review _This (Just "hello") :: Union Maybe '[String]
+-- Just "hello"
+--
+-- Use '_This' to try to destruct a 'Union' into a @f a@:
+--
+-- >>> let u = This (Identity "hello") :: Union Identity '[String, Int]
+-- >>> preview _This u :: Maybe (Identity String)
+-- Just (Identity "hello")
+--
+-- Use '_This' to try to destruct a 'Union' into a @f a@ (unsuccessfully):
+--
+-- >>> let v = That (This (Identity 3.3)) :: Union Identity '[String, Double, Int]
+-- >>> preview _This v :: Maybe (Identity String)
+-- Nothing
 _This :: Prism (Union f (a ': as)) (Union f (b ': as)) (f a) (f b)
 _This = prism This (union (Left . That) Right)
 {-# INLINE _This #-}
 
+-- | Lens-compatible 'Prism' for 'That'.
+--
+-- Use '_That' to construct a 'Union':
+--
+-- >>> let u = This (Just "hello") :: Union Maybe '[String]
+-- >>> review _That u :: Union Maybe '[Double, String]
+-- Just "hello"
+--
+-- Use '_That' to try to peel off a 'That' from a 'Union':
+--
+-- >>> let v = That (This (Identity "hello")) :: Union Identity '[Int, String]
+-- >>> preview _That v :: Maybe (Union Identity '[String])
+-- Just (Identity "hello")
+--
+-- Use '_That' to try to peel off a 'That' from a 'Union' (unsuccessfully):
+--
+-- >>> let w = This (Identity 3.5) :: Union Identity '[Double, String]
+-- >>> preview _That w :: Maybe (Union Identity '[String])
+-- Nothing
 _That :: Prism (Union f (a ': as)) (Union f (a ': bs)) (Union f as) (Union f bs)
 _That = prism That (union Right (Left . This))
 {-# INLINE _That #-}
