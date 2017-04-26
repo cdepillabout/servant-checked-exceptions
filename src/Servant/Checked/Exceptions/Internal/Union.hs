@@ -339,7 +339,8 @@ instance Read (Union f '[]) where
 -- | This is only a valid instance when the 'Read' instances for the types
 -- don't overlap.
 --
--- For instance, @3.5@ can only be read as a 'Double', not as a 'String'.
+-- For instance, imagine we are working with a 'Union' of a 'String' and a 'Double'.
+-- @3.5@ can only be read as a 'Double', not as a 'String'.
 -- Oppositely, @\"hello\"@ can only be read as a 'String', not as a 'Double'.
 --
 -- >>> let o = readMaybe "Identity 3.5" :: Maybe (Union Identity '[Double, String])
@@ -358,7 +359,9 @@ instance Read (Union f '[]) where
 -- >>> p >>= openUnionMatch :: Maybe String
 -- Just "hello"
 --
--- However, @\"hello\"@ can be 'read' as both a 'String' and 'Text'.
+-- However, imagine are we working with a 'Union' of a 'String' and 'Text'.
+-- @\"hello\"@ can be 'read' as both a 'String' and 'Text'.  However, in the
+-- following example, it can only be read as a 'String':
 --
 -- >>> let q = readMaybe "Identity \"hello\"" :: Maybe (Union Identity '[String, Text])
 -- >>> q
@@ -367,6 +370,9 @@ instance Read (Union f '[]) where
 -- Just "hello"
 -- >>> q >>= openUnionMatch :: Maybe Text
 -- Nothing
+--
+-- If the order of the types is flipped around, we are are able to read @\"hello\"@
+-- as a 'Text' but not as a 'String'.
 --
 -- >>> let r = readMaybe "Identity \"hello\"" :: Maybe (Union Identity '[Text, String])
 -- >>> r
