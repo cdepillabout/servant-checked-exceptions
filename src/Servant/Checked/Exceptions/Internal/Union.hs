@@ -15,7 +15,29 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Servant.Checked.Exceptions.Internal.Union where
+module Servant.Checked.Exceptions.Internal.Union
+  (
+  -- * Union
+    Union(..)
+  , union
+  , absurdUnion
+  , umap
+  -- ** Optics
+  , _This
+  , _That
+  -- ** Typeclasses
+  , RIndex
+  , UElem(..)
+  , IsMember
+  -- * OpenUnion
+  , OpenUnion
+  , openUnion
+  , fromOpenUnion
+  , fromOpenUnionOr
+  , openUnionPrism
+  , openUnionLift
+  , openUnionMatch
+  ) where
 
 -- Imports for Union stuff
 import Control.Applicative ((<|>))
@@ -206,8 +228,7 @@ type OpenUnion = Union Identity
 -- >>> openUnion (const "not a String") id p
 -- "not a String"
 openUnion
-  :: forall as a c.
-     (OpenUnion as -> c) -> (a -> c) -> OpenUnion (a ': as) -> c
+  :: (OpenUnion as -> c) -> (a -> c) -> OpenUnion (a ': as) -> c
 openUnion onThat onThis = union onThat (onThis . runIdentity)
 
 -- | This is similar to 'fromMaybe' for an 'OpenUnion'.
@@ -228,6 +249,11 @@ openUnion onThat onThis = union onThat (onThis . runIdentity)
 fromOpenUnion
   :: (OpenUnion as -> a) -> OpenUnion (a ': as) -> a
 fromOpenUnion onThat = openUnion onThat id
+
+-- | Flipped version of 'fromOpenUnion'.
+fromOpenUnionOr
+  :: OpenUnion (a ': as) -> (OpenUnion as -> a) -> a
+fromOpenUnionOr = flip fromOpenUnion
 
 -- | Just like 'unionPrism' but for 'OpenUnion'.
 openUnionPrism
