@@ -10,7 +10,52 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Servant.Checked.Exceptions.Internal.Envelope where
+{- |
+Module      :  Servant.Checked.Exceptions.Internal.Envelope
+
+Copyright   :  Dennis Gosnell 2017
+License     :  BSD3
+
+Maintainer  :  Dennis Gosnell (cdep.illabout@gmail.com)
+Stability   :  experimental
+Portability :  unknown
+
+This module defines the 'Envelope' type as a wrapper around a success value, or
+a set of possible errors.  The errors are an 'OpenUnion', which is an
+extensible sumtype.
+
+Other than the 'Envelope' type, the most important thing in this module is the
+'ToJSON' instance for 'Envelope'.
+-}
+
+module Servant.Checked.Exceptions.Internal.Envelope
+  (
+  -- * Envelope
+    Envelope(..)
+  -- * Helper functions
+  -- ** Envelope Constructors
+  , toSuccEnvelope
+  , toErrEnvelope
+  , pureSuccEnvelope
+  , pureErrEnvelope
+  -- ** Envelope Destructors
+  , envelope
+  , fromEnvelope
+  , fromEnvelopeOr
+  , fromEnvelopeM
+  , fromEnvelopeOrM
+  , errEnvelopeMatch
+  -- ** Optics
+  , _SuccEnvelope
+  , _ErrEnvelope
+  , _ErrEnvelopeErr
+  -- ** Either
+  , envelopeToEither
+  , eitherToEnvelope
+  , isoEnvelopeEither
+  -- * Setup code for doctests
+  -- $setup
+  ) where
 
 import Control.Applicative ((<|>))
 import Control.Lens (Iso, Prism, Prism', iso, preview, prism)
