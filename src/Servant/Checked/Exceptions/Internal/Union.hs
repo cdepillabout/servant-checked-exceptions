@@ -70,7 +70,6 @@ import Data.Aeson
 import Data.Aeson.Types (Parser)
 import Data.Functor.Identity (Identity(Identity, runIdentity))
 import Data.Typeable (Typeable)
-import GHC.TypeLits (Nat, type (+))
 import Text.Read (Read(readPrec), ReadPrec, (<++))
 
 -- $setup
@@ -88,16 +87,20 @@ import Text.Read (Read(readPrec), ReadPrec, (<++))
 -- Find the first item:
 --
 -- >>> import Data.Type.Equality ((:~:)(Refl))
--- >>> Refl :: RIndex String '[String, Int] :~: 0
+-- >>> Refl :: RIndex String '[String, Int] :~: 'Z
 -- Refl
 --
 -- Find the third item:
 --
--- >>> Refl :: RIndex Char '[String, Int, Char] :~: 2
+-- >>> Refl :: RIndex Char '[String, Int, Char] :~: 'S ('S 'Z)
 -- Refl
 type family RIndex (r :: k) (rs :: [k]) :: Nat where
-  RIndex r (r ': rs) = 0
-  RIndex r (s ': rs) = 1 + (RIndex r rs)
+  RIndex r (r ': rs) = 'Z
+  RIndex r (s ': rs) = 'S (RIndex r rs)
+
+-- | A mere approximation of the natural numbers. And their image as lifted by
+-- @-XDataKinds@ corresponds to the actual natural numbers.
+data Nat = Z | S !Nat
 
 -----------------------------
 -- This is from Data.Union --
@@ -216,13 +219,16 @@ class i ~ RIndex a as => UElem (a :: u) (as :: [u]) (i :: Nat) where
   unionMatch :: Union f as -> Maybe (f a)
   unionMatch = preview unionPrism
 
-instance UElem a (a ': as) 0 where
+instance UElem a (a ': as) 'Z where
   unionPrism :: Prism' (Union f (a ': as)) (f a)
   unionPrism = _This
   {-# INLINE unionPrism #-}
 
-instance {-# OVERLAPPABLE #-} (RIndex a (b ': as) ~ n, UElem a as i, n ~ (1 + i))
-    => UElem a (b ': as) n where
+instance
+    ( RIndex a (b ': as) ~ ('S i)
+    , UElem a as i
+    )
+    => UElem a (b ': as) ('S i) where
   unionPrism :: Prism' (Union f (b ': as)) (f a)
   unionPrism = _That . unionPrism
   {-# INLINE unionPrism #-}
