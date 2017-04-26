@@ -150,27 +150,96 @@ isoEnvelopeEither = iso envelopeToEither eitherToEnvelope
 -- >>> review _SuccEnvelope "hello" :: Envelope '[Double] String
 -- SuccEnvelope "hello"
 --
-
--- Use '_This' to try to destruct a 'Union' into a @f a@:
+-- Use '_SuccEnvelope' to try to destruct an 'Envelope' into an @a@:
 --
--- >>> let u = This (Identity "hello") :: Union Identity '[String, Int]
--- >>> preview _This u :: Maybe (Identity String)
--- Just (Identity "hello")
+-- >>> let env = toSuccEnvelope "hello" :: Envelope '[Double] String
+-- >>> preview _SuccEnvelope env :: Maybe String
+-- Just "hello"
 --
--- Use '_This' to try to destruct a 'Union' into a @f a@ (unsuccessfully):
+-- Use '_SuccEnvelope' to try to destruct a 'Envelope into an @a@
+-- (unsuccessfully):
 --
--- >>> let v = That (This (Identity 3.3)) :: Union Identity '[String, Double, Int]
--- >>> preview _This v :: Maybe (Identity String)
+-- >>> let double = 3.5 :: Double
+-- >>> let env' = toErrEnvelope double :: Envelope '[Double] String
+-- >>> preview _SuccEnvelope env' :: Maybe String
 -- Nothing
 _SuccEnvelope :: Prism (Envelope es a) (Envelope es b) a b
 _SuccEnvelope = prism SuccEnvelope $ envelope (Left . ErrEnvelope) Right
 
+-- | Lens-compatible 'Prism' to pull out an @'OpenUnion' es@ from a
+-- 'ErrEnvelope'.
+--
+-- Use '_ErrEnvelope' to construct an 'Envelope':
+--
+-- >>> let string = "hello" :: String
+-- >>> review _ErrEnvelope (openUnionLift string) :: Envelope '[String] Double
+-- ErrEnvelope (Identity "hello")
+--
+-- Use '_ErrEnvelope' to try to destruct an 'Envelope' into an
+-- @'OpenUnion' es@:
+--
+-- >>> let double = 3.5 :: Double
+-- >>> let env = toErrEnvelope double :: Envelope '[Double] ()
+-- >>> preview _ErrEnvelope env :: Maybe (OpenUnion '[Double])
+-- Just (Identity 3.5)
+--
+-- Use '_ErrEnvelope' to try to destruct a 'Envelope into an
+-- @'OpenUnion' es@ (unsuccessfully):
+--
+-- >>> let env' = toSuccEnvelope () :: Envelope '[Double] ()
+-- >>> preview _ErrEnvelope env' :: Maybe (OpenUnion '[Double])
+-- Nothing
+--
+-- Most users will not use '_ErrEnvelope', but instead '_ErrEnvelopeErr'.
 _ErrEnvelope :: Prism (Envelope es a) (Envelope es' a) (OpenUnion es) (OpenUnion es')
 _ErrEnvelope = prism ErrEnvelope $ envelope Right (Left . SuccEnvelope)
 
+-- | Lens-compatible 'Prism' to pull out a specific @e@ from an 'ErrEnvelope'.
+--
+-- Use '_ErrEnvelopeErr' to construct an 'Envelope':
+--
+-- >>> let string = "hello" :: String
+-- >>> review _ErrEnvelopeErr string :: Envelope '[String] Double
+-- ErrEnvelope (Identity "hello")
+--
+-- Use '_ErrEnvelopeErr' to try to destruct an 'Envelope' into an @e@:
+--
+-- >>> let double = 3.5 :: Double
+-- >>> let env = toErrEnvelope double :: Envelope '[Double] ()
+-- >>> preview _ErrEnvelopeErr env :: Maybe Double
+-- Just 3.5
+--
+-- Use '_ErrEnvelopeErr' to try to destruct a 'Envelope into an
+-- @e@ (unsuccessfully):
+--
+-- >>> let env' = toSuccEnvelope () :: Envelope '[Double] ()
+-- >>> preview _ErrEnvelopeErr env' :: Maybe Double
+-- Nothing
+-- >>> let env'' = toErrEnvelope 'c' :: Envelope '[Double, Char] ()
+-- >>> preview _ErrEnvelopeErr env'' :: Maybe Double
+-- Nothing
+--
+-- Most users will use '_ErrEnvelopeErr' instead of '_ErrEnvelope'.
 _ErrEnvelopeErr :: forall e es a. IsMember e es => Prism' (Envelope es a) e
 _ErrEnvelopeErr = _ErrEnvelope . openUnionPrism
 
+-- | Pull out a specific @e@ from an 'ErrEnvelope'.
+--
+-- Successfully pull out an @e@:
+--
+-- >>> let double = 3.5 :: Double
+-- >>> let env = toErrEnvelope double :: Envelope '[Double] ()
+-- >>> errEnvelopeMatch env :: Maybe Double
+-- Just 3.5
+--
+-- Unsuccessfully pull out an @e@:
+--
+-- >>> let env' = toSuccEnvelope () :: Envelope '[Double] ()
+-- >>> errEnvelopeMatch env' :: Maybe Double
+-- Nothing
+-- >>> let env'' = toErrEnvelope 'c' :: Envelope '[Double, Char] ()
+-- >>> errEnvelopeMatch env'' :: Maybe Double
+-- Nothing
 errEnvelopeMatch
   :: forall e es a.
      IsMember e es
