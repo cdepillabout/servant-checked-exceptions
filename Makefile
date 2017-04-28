@@ -1,8 +1,11 @@
-.PHONY: build clean dump-splices dump-th example ghci haddock haddock-server lint test upload watch watch-example watch-haddock watch-test
+.PHONY: build build-example clean dump-splices dump-th example-client example-docs example-server ghci haddock haddock-server lint test upload watch watch-example watch-haddock watch-test
 all: build
 
 build:
 	stack build
+
+build-example:
+	stack build --flag servant-checked-exceptions:buildexample
 
 clean:
 	stack clean
@@ -17,9 +20,14 @@ dump-th:
 	@echo
 	@find "$$(stack path --dist-dir)" -name "*.dump-splices" | sort
 
-example:
-	stack build --flag servant-checked-exceptions:buildexample
-	stack exec servant-checked-exceptions-example
+example-client: build-example
+	stack exec -- servant-checked-exceptions-example-client
+
+example-client: build-example
+	stack exec -- servant-checked-exceptions-example-docs
+
+example-server: build-example
+	stack exec -- servant-checked-exceptions-example-server
 
 haddock:
 	stack build --haddock

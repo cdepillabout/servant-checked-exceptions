@@ -139,7 +139,7 @@ script:
   mkdir -p test/test-dir/empty-dir
   case "$BUILD" in
     stack)
-      stack --no-terminal $ARGS test --haddock --no-haddock-deps --flag servant-static-th:buildexample
+      stack --no-terminal $ARGS test --haddock --no-haddock-deps --flag servant-checked-exceptions:buildexample
       ;;
     cabal)
       cabal configure --enable-tests --enable-benchmarks -v2 --ghc-options="-O0 -Werror" --flags="buildexample"

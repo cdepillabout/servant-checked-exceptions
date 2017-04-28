@@ -15,7 +15,7 @@ cabal-version:       >=1.10
 
 flag buildexample
   description: Build a small example program
-  default: True
+  default: False
 
 library
   hs-source-dirs:      src
