@@ -150,6 +150,13 @@ umap :: (forall a . f a -> g a) -> Union f as -> Union g as
 umap f (This a) = This $ f a
 umap f (That u) = That $ umap f u
 
+-- catchesUnion :: Union f as -> [UnionHandler as x] -> x
+-- catchesUnion (SuccEnvelope a) f _ = f a
+-- catchesUnion (ErrEnvelope es) _ handlers = undefined
+
+-- data UnionHandler es x = forall e. IsMember e es => UnionHandler (e -> x)
+
+
 -- | Lens-compatible 'Prism' for 'This'.
 --
 -- Use '_This' to construct a 'Union':
@@ -324,6 +331,7 @@ openUnionMatch
      IsMember a as
   => OpenUnion as -> Maybe a
 openUnionMatch = preview openUnionPrism
+
 
 instance NFData (Union f '[]) where
   rnf = absurdUnion

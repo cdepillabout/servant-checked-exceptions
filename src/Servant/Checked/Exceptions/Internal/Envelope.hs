@@ -3,6 +3,7 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -294,6 +295,12 @@ errEnvelopeMatch
      IsMember e es
   => Envelope es a -> Maybe e
 errEnvelopeMatch = preview _ErrEnvelopeErr
+
+-- catchesEnvelope :: Envelope es a -> (a -> x) -> [EnvelopeHandler es a] -> x
+-- catchesEnvelope (SuccEnvelope a) f _ = f a
+-- catchesEnvelope (ErrEnvelope es) _ handlers = undefined
+
+-- data EnvelopeHandler es x = forall e. IsMember e es => EnvelopeHandler (e -> x)
 
 -- | This 'ToJSON' instance encodes an 'Envelope' as an object with one of two
 -- keys depending on whether it is a 'SuccEnvelope' or an 'ErrEnvelope'.
