@@ -15,7 +15,7 @@ cabal-version:       >=1.10
 
 flag buildexample
   description: Build a small example program
-  default: False
+  default: True
 
 library
   hs-source-dirs:      src
@@ -33,37 +33,77 @@ library
                      , aeson
                      , bytestring
                      , deepseq
-                     , http-api-data
                      , http-media
                      , lens
-                     , natural-transformation
                      , servant
                      , servant-client
                      , servant-docs
                      , servant-server
                      , text
-                     , wai
-                     , warp
   default-language:    Haskell2010
   ghc-options:         -Wall -fwarn-incomplete-uni-patterns -fwarn-incomplete-record-updates -fwarn-monomorphism-restriction
   other-extensions:    QuasiQuotes
                      , TemplateHaskell
 
--- executable servant-checked-exceptions-example
---   main-is:             Example.hs
---   hs-source-dirs:      example
---   build-depends:       base
---                      , servant-server
---                      , servant-checked-exceptions
---                      , wai
---                      , warp
---   default-language:    Haskell2010
---   ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
+executable servant-checked-exceptions-example-client
+  main-is:             Client.hs
+  other-modules:       Api
+  hs-source-dirs:      example
+  build-depends:       base
+                     , aeson
+                     , http-api-data
+                     , servant
+                     , servant-checked-exceptions
+                     , servant-client
+                     , text
+  default-language:    Haskell2010
+  ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
 
---   if flag(buildexample)
---     buildable:         True
---   else
---     buildable:         False
+  if flag(buildexample)
+    buildable:         True
+  else
+    buildable:         False
+
+executable servant-checked-exceptions-example-docs
+  main-is:             Docs.hs
+  other-modules:       Api
+  hs-source-dirs:      example
+  build-depends:       base
+                     , aeson
+                     , http-api-data
+                     , servant
+                     , servant-checked-exceptions
+                     , servant-docs
+                     , text
+  default-language:    Haskell2010
+  ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
+
+  if flag(buildexample)
+    buildable:         True
+  else
+    buildable:         False
+
+executable servant-checked-exceptions-example-server
+  main-is:             Server.hs
+  other-modules:       Api
+  hs-source-dirs:      example
+  build-depends:       base
+                     , aeson
+                     , http-api-data
+                     , natural-transformation
+                     , servant
+                     , servant-checked-exceptions
+                     , servant-server
+                     , text
+                     , wai
+                     , warp
+  default-language:    Haskell2010
+  ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
+
+  if flag(buildexample)
+    buildable:         True
+  else
+    buildable:         False
 
 test-suite servant-checked-exceptions-doctest
   type:                exitcode-stdio-1.0

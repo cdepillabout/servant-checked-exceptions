@@ -1,4 +1,4 @@
-.PHONY: build clean dump-splices dump-th example ghci haddock haddock-server lint test upload watch watch-haddock watch-test
+.PHONY: build clean dump-splices dump-th example ghci haddock haddock-server lint test upload watch watch-example watch-haddock watch-test
 all: build
 
 build:
@@ -18,8 +18,8 @@ dump-th:
 	@find "$$(stack path --dist-dir)" -name "*.dump-splices" | sort
 
 example:
-	stack build --flag servant-static-th:buildexample
-	stack exec servant-static-th-example
+	stack build --flag servant-checked-exceptions:buildexample
+	stack exec servant-checked-exceptions-example
 
 haddock:
 	stack build --haddock
@@ -52,6 +52,9 @@ upload:
 # Watch for changes.
 watch:
 	stack build --file-watch --fast .
+
+watch-example:
+	stack build --file-watch --fast --flag servant-checked-exceptions:buildexample .
 
 watch-haddock:
 	stack build --haddock --file-watch --fast .
