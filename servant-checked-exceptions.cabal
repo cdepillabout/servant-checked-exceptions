@@ -52,6 +52,8 @@ executable servant-checked-exceptions-example-client
   build-depends:       base
                      , aeson
                      , http-api-data
+                     , http-client
+                     , optparse-applicative
                      , servant
                      , servant-checked-exceptions
                      , servant-client

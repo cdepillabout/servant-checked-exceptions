@@ -28,7 +28,7 @@ import Servant.Checked.Exceptions
 import Api
        (Api, BadSearchTermErr(BadSearchTermErr),
         IncorrectCapitalization(IncorrectCapitalization),
-        SearchQuery(SearchQuery), SearchResponse)
+        SearchQuery(SearchQuery), SearchResponse, port)
 
 serverRoot :: ServerT Api Handler
 serverRoot = postStrictSearch :<|> postLaxSearch
@@ -52,4 +52,4 @@ app :: Application
 app = serve (Proxy :: Proxy Api) serverRoot
 
 main :: IO ()
-main = run 8201 app
+main = run port app

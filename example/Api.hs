@@ -108,3 +108,10 @@ instance FromJSON IncorrectCapitalization where
   parseJSON :: Value -> Parser IncorrectCapitalization
   parseJSON = withText "IncorrectCapitalization" $
     maybe (fail "could not parse as IncorrectCapitalization") pure . readMaybe . unpack
+
+----------
+-- Port --
+----------
+
+port :: Int
+port = 8201
