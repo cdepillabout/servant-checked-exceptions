@@ -23,7 +23,7 @@ dump-th:
 example-client: build-example
 	stack exec -- servant-checked-exceptions-example-client
 
-example-client: build-example
+example-docs: build-example
 	stack exec -- servant-checked-exceptions-example-docs
 
 example-server: build-example
