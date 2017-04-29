@@ -94,7 +94,8 @@ main = do
   run clientEnv options
   where
     opts = info (commandParser <**> helper) $
-      fullDesc <> progDesc "Print a greeting for TARGET"
+      fullDesc <>
+      progDesc "Send the QUERY to the example server and print the response."
 
 baseUrl :: BaseUrl
 baseUrl = BaseUrl Http "localhost" port ""
