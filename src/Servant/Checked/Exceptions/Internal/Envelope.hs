@@ -46,6 +46,7 @@ module Servant.Checked.Exceptions.Internal.Envelope
   , fromEnvelopeM
   , fromEnvelopeOrM
   , errEnvelopeMatch
+  , catchesEnvelope
   -- ** Optics
   , _SuccEnvelope
   , _ErrEnvelope
@@ -70,8 +71,11 @@ import Data.Semigroup (Semigroup((<>), stimes), stimesIdempotent)
 import Data.Typeable (Typeable)
 import GHC.Generics (Generic)
 
+import Servant.Checked.Exceptions.Internal.Product (ToProduct)
 import Servant.Checked.Exceptions.Internal.Union
-       (IsMember, OpenUnion, openUnionLift, openUnionPrism)
+       (IsMember, OpenUnion, catchesOpenUnion, openUnionLift,
+        openUnionPrism)
+import Servant.Checked.Exceptions.Internal.Util (ReturnX)
 
 
 -- $setup
@@ -296,9 +300,12 @@ errEnvelopeMatch
   => Envelope es a -> Maybe e
 errEnvelopeMatch = preview _ErrEnvelopeErr
 
--- catchesEnvelope :: Envelope es a -> (a -> x) -> [EnvelopeHandler es a] -> x
--- catchesEnvelope (SuccEnvelope a) f _ = f a
--- catchesEnvelope (ErrEnvelope es) _ handlers = undefined
+catchesEnvelope
+  :: forall tuple es a x.
+     ToProduct tuple (ReturnX x es)
+  => tuple -> (a -> x) -> Envelope es a -> x
+catchesEnvelope _ a2x (SuccEnvelope a) = a2x a
+catchesEnvelope tuple _ (ErrEnvelope u) = catchesOpenUnion tuple u
 
 -- data EnvelopeHandler es x = forall e. IsMember e es => EnvelopeHandler (e -> x)
 
