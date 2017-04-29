@@ -26,8 +26,7 @@ import Servant.API.ContentTypes (AllMimeRender(allMimeRender))
 import Servant.Docs
        (Action, API, DocOptions, Endpoint, HasDocs(docsFor),
         ToSample(toSamples))
-import Servant.Docs.Internal
-       (DocNote(DocNote), apiEndpoints, notes, respBody, response)
+import Servant.Docs.Internal (apiEndpoints, respBody, response)
 
 import Servant.Checked.Exceptions.Internal.Envelope
        (Envelope, toErrEnvelope, toSuccEnvelope)
