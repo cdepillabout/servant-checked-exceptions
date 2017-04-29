@@ -6,12 +6,10 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -19,22 +17,10 @@
 module Servant.Checked.Exceptions.Internal.Product
   where
 
--- Imports for Union stuff
--- import Control.Applicative ((<|>))
--- import Control.Lens (Prism, Prism', iso, preview, prism, prism', review)
--- import Control.DeepSeq (NFData(rnf))
--- import Data.Aeson
---        (FromJSON(parseJSON), ToJSON(toJSON), Value)
--- import Data.Aeson.Types (Parser)
 import Data.Functor.Identity (Identity(Identity))
--- import Data.Typeable (Typeable)
--- import Text.Read (Read(readPrec), ReadPrec, (<++))
 
 -- $setup
 -- >>> -- :set -XDataKinds
--- >>> -- :set -XTypeOperators
--- >>> -- import Data.Text (Text)
--- >>> -- import Text.Read (readMaybe)
 
 data Product (f :: u -> *) (as :: [u]) where
   Nil :: Product f '[]
