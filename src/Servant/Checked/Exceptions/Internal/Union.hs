@@ -3,6 +3,7 @@
 {-# LANGUAGE EmptyCase #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE LambdaCase #-}
@@ -40,6 +41,7 @@ module Servant.Checked.Exceptions.Internal.Union
   -- * Union
     Union(..)
   , union
+  , catchesUnion
   , absurdUnion
   , umap
   -- ** Optics
@@ -57,6 +59,7 @@ module Servant.Checked.Exceptions.Internal.Union
   , openUnionPrism
   , openUnionLift
   , openUnionMatch
+  , catchesOpenUnion
   -- * Setup code for doctests
   -- $setup
   ) where
@@ -71,6 +74,11 @@ import Data.Aeson.Types (Parser)
 import Data.Functor.Identity (Identity(Identity, runIdentity))
 import Data.Typeable (Typeable)
 import Text.Read (Read(readPrec), ReadPrec, (<++))
+
+import Servant.Checked.Exceptions.Internal.Product
+       (Product(Cons, Nil), ToProduct, ToProductF,
+        tupleToProduct, tupleToProductF)
+import Servant.Checked.Exceptions.Internal.Util (ReturnX)
 
 -- $setup
 -- >>> :set -XDataKinds
@@ -150,12 +158,13 @@ umap :: (forall a . f a -> g a) -> Union f as -> Union g as
 umap f (This a) = This $ f a
 umap f (That u) = That $ umap f u
 
--- catchesUnion :: Union f as -> [UnionHandler as x] -> x
--- catchesUnion (SuccEnvelope a) f _ = f a
--- catchesUnion (ErrEnvelope es) _ handlers = undefined
+catchesUnionProduct :: forall x f as. Applicative f => Product f (ReturnX x as) -> Union f as -> f x
+catchesUnionProduct (Cons f _) (This a) = f <*> a
+catchesUnionProduct (Cons _ p) (That u) = catchesUnionProduct p u
+catchesUnionProduct Nil _ = undefined
 
--- data UnionHandler es x = forall e. IsMember e es => UnionHandler (e -> x)
-
+catchesUnion :: (Applicative f, ToProductF tuple f (ReturnX x as)) => tuple -> Union f as -> f x
+catchesUnion tuple u = catchesUnionProduct (tupleToProductF tuple) u
 
 -- | Lens-compatible 'Prism' for 'This'.
 --
@@ -332,6 +341,8 @@ openUnionMatch
   => OpenUnion as -> Maybe a
 openUnionMatch = preview openUnionPrism
 
+catchesOpenUnion :: ToProduct tuple (ReturnX x as) => tuple -> OpenUnion as -> x
+catchesOpenUnion tuple u = runIdentity $ catchesUnionProduct (tupleToProduct tuple) u
 
 instance NFData (Union f '[]) where
   rnf = absurdUnion

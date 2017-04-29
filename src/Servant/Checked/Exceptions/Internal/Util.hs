@@ -33,3 +33,8 @@ module Servant.Checked.Exceptions.Internal.Util where
 type family Snoc (as :: [k]) (b :: k) where
   Snoc '[] b = '[b]
   Snoc (a ': as) b = (a ': Snoc as b)
+
+type family ReturnX x as where
+  ReturnX x (a ': as) = ((a -> x) ': ReturnX x as)
+  ReturnX x '[] = '[]
+

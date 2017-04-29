@@ -22,6 +22,7 @@ library
   exposed-modules:     Servant.Checked.Exceptions
                      , Servant.Checked.Exceptions.Internal
                      , Servant.Checked.Exceptions.Internal.Envelope
+                     , Servant.Checked.Exceptions.Internal.Product
                      , Servant.Checked.Exceptions.Internal.Servant
                      , Servant.Checked.Exceptions.Internal.Servant.API
                      , Servant.Checked.Exceptions.Internal.Servant.Client
