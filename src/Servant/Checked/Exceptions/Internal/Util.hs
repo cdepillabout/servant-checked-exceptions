@@ -22,7 +22,6 @@ module Servant.Checked.Exceptions.Internal.Util where
 --
 -- Append to an empty list:
 --
--- >>> import Data.Type.Equality ((:~:)(Refl))
 -- >>> Refl :: Snoc '[] Double :~: '[Double]
 -- Refl
 --
@@ -34,7 +33,20 @@ type family Snoc (as :: [k]) (b :: k) where
   Snoc '[] b = '[b]
   Snoc (a ': as) b = (a ': Snoc as b)
 
+-- | Change a list of types into a list of functions that take the given type
+-- and return @x@.
+--
+-- >>> Refl :: ReturnX Double '[String, Int] :~: '[String -> Double, Int -> Double]
+-- Refl
+--
+-- Don't do anything with an empty list:
+--
+-- >>> Refl :: ReturnX Double '[] :~: '[]
+-- Refl
 type family ReturnX x as where
   ReturnX x (a ': as) = ((a -> x) ': ReturnX x as)
   ReturnX x '[] = '[]
+
+-- $setup
+-- >>> import Data.Type.Equality ((:~:)(Refl))
 
