@@ -27,10 +27,11 @@ import Servant.Client
        (BaseUrl(BaseUrl), ClientEnv(ClientEnv), ClientM, Scheme(Http),
         client, runClientM)
 
-import Servant.Checked.Exceptions (Envelope, absurdUnion, envelope, openUnion)
+import Servant.Checked.Exceptions (Envelope, catchesEnvelope)
 
 import Api
-       (Api, BadSearchTermErr, IncorrectCapitalization,
+       (Api, BadSearchTermErr(BadSearchTermErr),
+        IncorrectCapitalization(IncorrectCapitalization),
         SearchQuery(SearchQuery), SearchResponse(SearchResponse), port)
 
 strictSearch
@@ -59,18 +60,22 @@ run clientEnv Options{query, useStrict = True} = do
     Left servantErr -> putStrLn $ "Got a ServantErr: " <> show servantErr
     Right env ->
       putStrLn $
-        envelope
-          (openUnion
-            (openUnion
-              absurdUnion
-              (const "Error: the search term was not capitalized correctly"))
-            (const "Error: the search term was not \"hello\""))
+        catchesEnvelope
+          ( \BadSearchTermErr -> "the search term was not \"Hello\""
+          , \IncorrectCapitalization -> "the search term was not capitalized correctly"
+          )
           (\(SearchResponse searchResponse) -> "Success: " <> searchResponse)
           env
 run clientEnv Options{query, useStrict = False} = do
   eitherRes <- runClientM (laxSearch $ SearchQuery query) clientEnv
   case eitherRes of
     Left servantErr -> putStrLn $ "Got a ServantErr: " <> show servantErr
+    Right env ->
+      putStrLn $
+        catchesEnvelope
+          (\BadSearchTermErr -> "the search term was not \"Hello\"")
+          (\(SearchResponse searchResponse) -> "Success: " <> searchResponse)
+          env
 
 baseUrl :: BaseUrl
 baseUrl = BaseUrl Http "localhost" port ""

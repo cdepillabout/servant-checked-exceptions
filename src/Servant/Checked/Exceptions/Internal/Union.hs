@@ -158,12 +158,17 @@ umap :: (forall a . f a -> g a) -> Union f as -> Union g as
 umap f (This a) = This $ f a
 umap f (That u) = That $ umap f u
 
-catchesUnionProduct :: forall x f as. Applicative f => Product f (ReturnX x as) -> Union f as -> f x
+catchesUnionProduct
+  :: forall x f as.
+     Applicative f
+  => Product f (ReturnX x as) -> Union f as -> f x
 catchesUnionProduct (Cons f _) (This a) = f <*> a
 catchesUnionProduct (Cons _ p) (That u) = catchesUnionProduct p u
 catchesUnionProduct Nil _ = undefined
 
-catchesUnion :: (Applicative f, ToProductF tuple f (ReturnX x as)) => tuple -> Union f as -> f x
+catchesUnion
+  :: (Applicative f, ToProductF tuple f (ReturnX x as))
+  => tuple -> Union f as -> f x
 catchesUnion tuple u = catchesUnionProduct (tupleToProductF tuple) u
 
 -- | Lens-compatible 'Prism' for 'This'.
