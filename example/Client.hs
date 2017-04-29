@@ -21,7 +21,8 @@ import Data.Monoid ((<>))
 import Data.Proxy (Proxy(Proxy))
 import Network.HTTP.Client (defaultManagerSettings, newManager)
 import Options.Applicative
-       (Parser, (<**>), execParser, fullDesc, helper, info, progDesc)
+       (Parser, (<**>), argument, execParser, fullDesc, help, helper, info, long,
+        metavar, progDesc, short, str, switch)
 import Servant.API ((:<|>)((:<|>)))
 import Servant.Client
        (BaseUrl(BaseUrl), ClientEnv(ClientEnv), ClientM, Scheme(Http),
@@ -45,16 +46,18 @@ strictSearch :<|> laxSearch = client (Proxy :: Proxy Api)
 data Options = Options { query :: String, useStrict :: Bool }
 
 queryParser :: Parser String
-queryParser = undefined
+queryParser = argument str (metavar "QUERY")
 
 useStrictParser :: Parser Bool
-useStrictParser = undefined
+useStrictParser =
+  switch $
+    long "strict" <> short 's' <> help "Whether to be use the strict api"
 
 commandParser :: Parser Options
 commandParser = Options <$> queryParser <*> useStrictParser
 
-run :: ClientEnv -> Options -> IO ()
-run clientEnv Options{query, useStrict = True} = do
+runStrict :: ClientEnv -> String -> IO ()
+runStrict clientEnv query = do
   eitherRes <- runClientM (strictSearch $ SearchQuery query) clientEnv
   case eitherRes of
     Left servantErr -> putStrLn $ "Got a ServantErr: " <> show servantErr
@@ -66,7 +69,9 @@ run clientEnv Options{query, useStrict = True} = do
           )
           (\(SearchResponse searchResponse) -> "Success: " <> searchResponse)
           env
-run clientEnv Options{query, useStrict = False} = do
+
+runLax :: ClientEnv -> String -> IO ()
+runLax clientEnv query = do
   eitherRes <- runClientM (laxSearch $ SearchQuery query) clientEnv
   case eitherRes of
     Left servantErr -> putStrLn $ "Got a ServantErr: " <> show servantErr
@@ -77,8 +82,9 @@ run clientEnv Options{query, useStrict = False} = do
           (\(SearchResponse searchResponse) -> "Success: " <> searchResponse)
           env
 
-baseUrl :: BaseUrl
-baseUrl = BaseUrl Http "localhost" port ""
+run :: ClientEnv -> Options -> IO ()
+run clientEnv Options{query, useStrict = True} = runStrict clientEnv query
+run clientEnv Options{query, useStrict = False} = runLax clientEnv query
 
 main :: IO ()
 main = do
@@ -89,3 +95,7 @@ main = do
   where
     opts = info (commandParser <**> helper) $
       fullDesc <> progDesc "Print a greeting for TARGET"
+
+baseUrl :: BaseUrl
+baseUrl = BaseUrl Http "localhost" port ""
+
