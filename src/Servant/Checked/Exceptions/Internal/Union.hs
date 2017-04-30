@@ -48,6 +48,7 @@ module Servant.Checked.Exceptions.Internal.Union
   , _This
   , _That
   -- ** Typeclasses
+  , Nat(Z, S)
   , RIndex
   , UElem(..)
   , IsMember

@@ -49,6 +49,7 @@ module Servant.Checked.Exceptions
   , _This
   , _That
   -- ***** Typeclasses used with Union
+  , Nat(Z, S)
   , RIndex
   , UElem(..)
   , IsMember
