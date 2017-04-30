@@ -166,6 +166,20 @@ catchesUnionProduct (Cons f _) (This a) = f <*> a
 catchesUnionProduct (Cons _ p) (That u) = catchesUnionProduct p u
 catchesUnionProduct Nil _ = undefined
 
+-- | An alternate case anaylsis for a 'Union'.  This method uses a tuple
+-- containing handlers for each potential value of the 'Union'.  This is
+-- somewhat similar to the 'Control.Exception.catches' function.
+--
+-- Here is an example of handling a 'Union' with two possible values.  Notice
+-- that a normal tuple is used:
+--
+-- >>> let u = This $ Identity 3 :: Union Identity '[Int, String]
+-- >>> let intHandler = (Identity $ \int -> show int) :: Identity (Int -> String)
+-- >>> let strHandler = (Identity $ \str -> str) :: Identity (String -> String)
+-- >>> catchesUnion (intHandler, strHandler) u :: Identity String
+-- Identity "3"
+--
+-- Checkout 'catchesOpenUnion' for more examples.
 catchesUnion
   :: (Applicative f, ToProduct tuple f (ReturnX x as))
   => tuple -> Union f as -> f x
