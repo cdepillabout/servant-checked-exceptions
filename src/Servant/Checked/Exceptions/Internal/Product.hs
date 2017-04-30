@@ -22,6 +22,10 @@ import Data.Functor.Identity (Identity(Identity))
 -- $setup
 -- >>> -- :set -XDataKinds
 
+-------------
+-- Product --
+-------------
+
 -- | An extensible product type.  This is similar to
 -- 'Servant.Checked.Exceptions.Internal.Union.Union', except a product type
 -- instead of a sum type.
@@ -49,11 +53,22 @@ instance forall (f :: u -> *) (a :: u) (b :: u) (c :: u) (d :: u). ToProduct (f 
   toProduct :: (f a, f b, f c, f d) -> Product f '[a, b, c, d]
   toProduct (fa, fb, fc, fd) = Cons fa $ Cons fb $ Cons fc $ Cons fd Nil
 
+-- | Turn a tuple into a 'Product'.
+--
+-- >>> tupleToProduct (Identity 1, Identity 2.0) :: Product Identity '[Int, Double]
+-- Cons (Identity 1) (Cons (Identity 2.0) Nil)
 tupleToProduct :: ToProduct t f as => t -> Product f as
 tupleToProduct = toProduct
 
+-----------------
+-- OpenProduct --
+-----------------
+
+-- | @'Product' 'Identity'@ is used as a standard open product type.
 type OpenProduct = Product Identity
 
+-- | 'ToOpenProduct' gives us a way to convert a tuple to an 'OpenProduct'.
+-- See 'tupleToOpenProduct'.
 class ToOpenProduct (tuple :: *) (as :: [*]) | as -> tuple where
   toOpenProduct :: tuple -> OpenProduct as
 
@@ -82,6 +97,30 @@ instance
       . Cons (Identity c)
       $ Cons (Identity d) Nil
 
+-- | Turn a tuple into an 'OpenProduct'.
+--
+-- For example, turn a triple into an 'OpenProduct':
+--
+-- >>> tupleToOpenProduct (1, 2.0, "hello") :: OpenProduct '[Int, Double, String]
+-- Cons (Identity 1) (Cons (Identity 2.0) (Cons (Identity "hello") Nil))
+--
+-- Turn a single value into an 'OpenProduct':
+--
+-- >>> tupleToOpenProduct 'c' :: OpenProduct '[Char]
+-- Cons (Identity 'c') Nil
 tupleToOpenProduct :: ToOpenProduct t as => t -> OpenProduct as
 tupleToOpenProduct = toOpenProduct
+
+---------------
+-- Instances --
+---------------
+
+instance Show (Product f '[]) where
+  show :: Product f '[] -> String
+  show Nil = "Nil"
+
+instance (Show (f a), Show (Product f as)) => Show (Product f (a ': as)) where
+  showsPrec :: Int -> (Product f (a ': as)) -> String -> String
+  showsPrec n (Cons fa prod) = showParen (n > 10) $
+    showString "Cons " . showsPrec 11 fa . showString " " . showsPrec 11 prod
 

@@ -86,9 +86,9 @@ import Servant.Checked.Exceptions.Internal.Util (ReturnX)
 -- >>> import Data.Text (Text)
 -- >>> import Text.Read (readMaybe)
 
----------------------------------------
--- This is from Data.Vinyl.TypeLevel --
----------------------------------------
+----------------------------------------------------
+-- Type-level helpers (from Data.Vinyl.TypeLevel) --
+----------------------------------------------------
 
 -- | A partial relation that gives the index of a value in a list.
 --
@@ -111,7 +111,7 @@ type family RIndex (r :: k) (rs :: [k]) :: Nat where
 data Nat = Z | S !Nat
 
 -----------------------------
--- This is from Data.Union --
+-- Union (from Data.Union) --
 -----------------------------
 
 -- | A 'Union' is parameterized by a universe @u@, an interpretation @f@
@@ -216,6 +216,10 @@ _That :: Prism (Union f (a ': as)) (Union f (a ': bs)) (Union f as) (Union f bs)
 _That = prism That (union Right (Left . This))
 {-# INLINE _That #-}
 
+------------------
+-- type classes --
+------------------
+
 -- | @'UElem' a as i@ provides a way to potentially get an @f a@ out of a
 -- @'Union' f as@ ('unionMatch').  It also provides a way to create a
 -- @'Union' f as@ from an @f a@ ('unionLift').
@@ -257,6 +261,10 @@ instance
 -- | This is a helpful 'Constraint' synonym to assert that @a@ is a member of
 -- @as@.
 type IsMember (a :: u) (as :: [u]) = UElem a as (RIndex a as)
+
+---------------
+-- OpenUnion --
+---------------
 
 -- | We can use @'Union' 'Identity'@ as a standard open sum type.
 type OpenUnion = Union Identity
@@ -352,6 +360,10 @@ catchesOpenUnion
 catchesOpenUnion tuple u =
   runIdentity $
     catchesUnionProduct (tupleToOpenProduct tuple) u
+
+---------------
+-- Instances --
+---------------
 
 instance NFData (Union f '[]) where
   rnf = absurdUnion
