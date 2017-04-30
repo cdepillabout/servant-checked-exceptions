@@ -180,6 +180,16 @@ catchesUnionProduct Nil _ = undefined
 -- >>> catchesUnion (intHandler, strHandler) u :: Identity String
 -- Identity "3"
 --
+-- Given a 'Union' like @'Union' 'Identity' \'['Int', 'String']@, the type of
+-- 'catchesUnion' becomes the following:
+--
+-- @
+--   'catchesUnion'
+--     :: ('Identity' ('Int' -> 'String'), 'Identity' ('String' -> 'String'))
+--     -> 'Union' 'Identity' \'['Int', 'String']
+--     -> 'Identity' 'String'
+-- @
+--
 -- Checkout 'catchesOpenUnion' for more examples.
 catchesUnion
   :: (Applicative f, ToProduct tuple f (ReturnX x as))
