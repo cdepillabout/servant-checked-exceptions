@@ -14,6 +14,20 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
+{- |
+Module      :  Servant.Checked.Exceptions.Internal.Product
+
+Copyright   :  Dennis Gosnell 2017
+License     :  BSD3
+
+Maintainer  :  Dennis Gosnell (cdep.illabout@gmail.com)
+Stability   :  experimental
+Portability :  unknown
+
+This module defines an open product type.  This is used in the case-analysis
+handler for the open sum type.
+-}
+
 module Servant.Checked.Exceptions.Internal.Product
   where
 
