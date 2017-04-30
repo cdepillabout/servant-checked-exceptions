@@ -56,9 +56,9 @@ matrix:
   #   compiler: ": #stack 7.10.3 (lts-6)"
   #   addons: {apt: {packages: [ghc-7.10.3,libgmp-dev], sources: [hvr-ghc]}}
 
-  - env: BUILD=stack ARGS="--resolver lts-7"
-    compiler: ": #stack 8.0.1 (lts-7)"
-    addons: {apt: {packages: [ghc-8.0.1,libgmp-dev], sources: [hvr-ghc]}}
+  # - env: BUILD=stack ARGS="--resolver lts-7"
+  #   compiler: ": #stack 8.0.1 (lts-7)"
+  #   addons: {apt: {packages: [ghc-8.0.1,libgmp-dev], sources: [hvr-ghc]}}
 
   - env: BUILD=stack ARGS="--resolver lts-8"
     compiler: ": #stack 8.0.2 (lts-8)"
@@ -74,9 +74,9 @@ matrix:
   #   compiler: ": #stack 7.10.3 (lts-6) osx"
   #   os: osx
 
-  - env: BUILD=stack ARGS="--resolver lts-7"
-    compiler: ": #stack 8.0.1 (lts-7) osx"
-    os: osx
+  # - env: BUILD=stack ARGS="--resolver lts-7"
+  #   compiler: ": #stack 8.0.1 (lts-7) osx"
+  #   os: osx
 
   - env: BUILD=stack ARGS="--resolver lts-8"
     compiler: ": #stack 8.0.2 (lts-8) osx"
