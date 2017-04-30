@@ -52,17 +52,18 @@ module Servant.Checked.Exceptions
   , RIndex
   , UElem(..)
   , IsMember
-  -- **** 'Product' (used by 'OpenUnion')
+  -- **** 'OpenProduct' (used by 'OpenUnion')
   -- | This 'Product' type is used to easily create a case-analysis for
   -- 'Union's.  You can see it being used in 'catchesOpenUnion' and
   -- 'catchesEnvelope'.  The 'ToProduct' type class makes it easy to convert a
   -- tuple to a 'Product'.  This makes it so the end user only has to worry
   -- about working with tuples, and can mostly ignore this 'Product' type.
+  , OpenProduct
   , Product(..)
+  , ToOpenProduct
+  , tupleToOpenProduct
   , ToProduct
   , tupleToProduct
-  , ToProductF
-  , tupleToProductF
   , ReturnX
   ) where
 

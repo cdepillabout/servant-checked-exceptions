@@ -76,8 +76,8 @@ import Data.Typeable (Typeable)
 import Text.Read (Read(readPrec), ReadPrec, (<++))
 
 import Servant.Checked.Exceptions.Internal.Product
-       (Product(Cons, Nil), ToProduct, ToProductF,
-        tupleToProduct, tupleToProductF)
+       (Product(Cons, Nil), ToOpenProduct, ToProduct, tupleToOpenProduct,
+        tupleToProduct)
 import Servant.Checked.Exceptions.Internal.Util (ReturnX)
 
 -- $setup
@@ -167,9 +167,9 @@ catchesUnionProduct (Cons _ p) (That u) = catchesUnionProduct p u
 catchesUnionProduct Nil _ = undefined
 
 catchesUnion
-  :: (Applicative f, ToProductF tuple f (ReturnX x as))
+  :: (Applicative f, ToProduct tuple f (ReturnX x as))
   => tuple -> Union f as -> f x
-catchesUnion tuple u = catchesUnionProduct (tupleToProductF tuple) u
+catchesUnion tuple u = catchesUnionProduct (tupleToProduct tuple) u
 
 -- | Lens-compatible 'Prism' for 'This'.
 --
@@ -346,8 +346,12 @@ openUnionMatch
   => OpenUnion as -> Maybe a
 openUnionMatch = preview openUnionPrism
 
-catchesOpenUnion :: ToProduct tuple (ReturnX x as) => tuple -> OpenUnion as -> x
-catchesOpenUnion tuple u = runIdentity $ catchesUnionProduct (tupleToProduct tuple) u
+catchesOpenUnion
+  :: ToOpenProduct tuple (ReturnX x as)
+  => tuple -> OpenUnion as -> x
+catchesOpenUnion tuple u =
+  runIdentity $
+    catchesUnionProduct (tupleToOpenProduct tuple) u
 
 instance NFData (Union f '[]) where
   rnf = absurdUnion

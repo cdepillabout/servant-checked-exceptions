@@ -71,7 +71,7 @@ import Data.Semigroup (Semigroup((<>), stimes), stimesIdempotent)
 import Data.Typeable (Typeable)
 import GHC.Generics (Generic)
 
-import Servant.Checked.Exceptions.Internal.Product (ToProduct)
+import Servant.Checked.Exceptions.Internal.Product (ToOpenProduct)
 import Servant.Checked.Exceptions.Internal.Union
        (IsMember, OpenUnion, catchesOpenUnion, openUnionLift,
         openUnionPrism)
@@ -302,7 +302,7 @@ errEnvelopeMatch = preview _ErrEnvelopeErr
 
 catchesEnvelope
   :: forall tuple es a x.
-     ToProduct tuple (ReturnX x es)
+     ToOpenProduct tuple (ReturnX x es)
   => tuple -> (a -> x) -> Envelope es a -> x
 catchesEnvelope _ a2x (SuccEnvelope a) = a2x a
 catchesEnvelope tuple _ (ErrEnvelope u) = catchesOpenUnion tuple u
