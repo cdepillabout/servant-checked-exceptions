@@ -397,9 +397,9 @@ openUnionMatch = preview openUnionPrism
 --
 -- @
 --   'catchesOpenUnion'
---     :: ('Int' -> 'String', 'String' -> 'String')
+--     :: ('Int' -> x, 'String' -> x)
 --     -> 'OpenUnion' \'['Int', 'String']
---     -> 'String'
+--     -> x
 -- @
 --
 -- Here is an example of handling an 'OpenUnion' with three possible values:
