@@ -1,34 +1,18 @@
-{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE EmptyCase #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE GADTs #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE UndecidableInstances #-}
 
 module Api where
 
 import Data.Aeson
        (FromJSON(parseJSON), ToJSON(toJSON), Value, withText)
 import Data.Aeson.Types (Parser)
--- import Data.Proxy (Proxy(Proxy))
 import Data.String (IsString)
 import Data.Text (unpack)
 import Servant.API (Capture, JSON, Post, (:>), (:<|>))
--- import Servant.Client (Client, ClientM, client)
--- import Servant.Docs
---        (ToParam(toParam), ToSample(toSamples), docs, markdown)
--- import Servant.Docs.Internal
---        (DocQueryParam(DocQueryParam), ParamKind(Normal))
 import Text.Read (readMaybe)
 import Web.HttpApiData (FromHttpApiData, ToHttpApiData)
 
@@ -38,8 +22,16 @@ import Servant.Checked.Exceptions (Throws)
 -- API --
 ---------
 
+-- | This is our main 'Api' type.  We will create a server, a client, and
+-- documentation for this api.
+--
+-- This api is composed of two routes, 'ApiStrictSearch' and 'ApiLaxSearch'.
 type Api = ApiStrictSearch :<|> ApiLaxSearch
 
+-- | This is a strict search api.  You pass it a @\"query\"@, and it returns a
+-- 'SearchResponse'.  It potentially returns a 'BadSearchTermErr' if your query
+-- is not the string @\"hello\"@.  It returns an 'IncorrectCapitialization'
+-- error if your query is not capitalized like @\"Hello\"@.
 type ApiStrictSearch =
   "strict-search" :>
   Capture "query" SearchQuery :>
@@ -47,6 +39,8 @@ type ApiStrictSearch =
   Throws IncorrectCapitalization :>
   Post '[JSON] SearchResponse
 
+-- | This is similar to 'ApiStrictSearch', but it doesn't force the query to be
+-- capitalized correctly.  It only returns a 'BadSearchTermErr'.
 type ApiLaxSearch =
   "lax-search" :>
   Capture "query" SearchQuery :>
@@ -57,6 +51,7 @@ type ApiLaxSearch =
 -- Parameters and Responses --
 ------------------------------
 
+-- | This 'SearchQuery' type is just a newtype wrapper around a 'String'.
 newtype SearchQuery = SearchQuery
   { unSearchQuery :: String
   } deriving ( Eq
@@ -70,6 +65,7 @@ newtype SearchQuery = SearchQuery
              , ToJSON
              )
 
+-- | This 'SearchResponse' type is just a newtype wrapper around a 'String'.
 newtype SearchResponse = SearchResponse
   { unSearchResponse :: String
   } deriving ( Eq
@@ -87,6 +83,7 @@ newtype SearchResponse = SearchResponse
 -- Errors --
 ------------
 
+-- | This error is returned when the search query is not the string @\"hello\"@.
 data BadSearchTermErr = BadSearchTermErr deriving (Eq, Read, Show)
 
 instance ToJSON BadSearchTermErr where
@@ -98,6 +95,10 @@ instance FromJSON BadSearchTermErr where
   parseJSON = withText "BadSearchTermErr" $
     maybe (fail "could not parse as BadSearchTermErr") pure . readMaybe . unpack
 
+-- | This error is returned when the search query is @\"hello\"@, but it is not
+-- capitalized correctly.  For example, the search query @\"hello\"@ will
+-- return an 'IncorrectCapitialization' error.  However, the search query
+-- @\"Hello\"@ will return a success.
 data IncorrectCapitalization = IncorrectCapitalization deriving (Eq, Read, Show)
 
 instance ToJSON IncorrectCapitalization where
@@ -113,5 +114,6 @@ instance FromJSON IncorrectCapitalization where
 -- Port --
 ----------
 
+-- | The port to run the server on.
 port :: Int
 port = 8201
