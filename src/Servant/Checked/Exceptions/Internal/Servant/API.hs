@@ -1,6 +1,19 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE KindSignatures #-}
 
+{- |
+Module      :  Servant.Checked.Exceptions.Internal.Servant.API
+
+Copyright   :  Dennis Gosnell 2017
+License     :  BSD3
+
+Maintainer  :  Dennis Gosnell (cdep.illabout@gmail.com)
+Stability   :  experimental
+Portability :  unknown
+
+This module defines the 'Throws' and 'Throwing' types.
+-}
+
 module Servant.Checked.Exceptions.Internal.Servant.API where
 
 -- | 'Throws' is used in Servant API definitions and signifies that an API will
