@@ -13,6 +13,19 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
+{- |
+Module      :  Servant.Checked.Exceptions.Internal.Servant.Docs
+
+Copyright   :  Dennis Gosnell 2017
+License     :  BSD3
+
+Maintainer  :  Dennis Gosnell (cdep.illabout@gmail.com)
+Stability   :  experimental
+Portability :  unknown
+
+This module exports 'HasDocs' instances for 'Throws' and 'Throwing'.
+-}
+
 module Servant.Checked.Exceptions.Internal.Servant.Docs where
 
 import Control.Lens ((&), (<>~))
@@ -45,6 +58,9 @@ instance (HasDocs (Throwing '[e] :> api)) => HasDocs (Throws e :> api) where
     -> API
   docsFor Proxy = docsFor (Proxy :: Proxy (Throwing '[e] :> api))
 
+-- | When @'Throwing' es@ comes before a 'Verb', generate the documentation for
+-- the same 'Verb', but returning an @'Envelope' es@.  Also add documentation
+-- for the potential @es@.
 instance
        ( CreateRespBodiesFor es ctypes
        , HasDocs (Verb method status ctypes (Envelope es a))
@@ -73,6 +89,7 @@ class CreateRespBodiesFor list ctypes where
     -> Proxy ctypes
     -> [(Text, MediaType, ByteString)]
 
+-- | An empty list of types has no samples.
 instance CreateRespBodiesFor '[] ctypes where
   createRespBodiesFor
     :: Proxy '[]
@@ -80,6 +97,7 @@ instance CreateRespBodiesFor '[] ctypes where
     -> [(Text, MediaType, ByteString)]
   createRespBodiesFor Proxy Proxy = []
 
+-- | Create a response body for each of the error types.
 instance
        ( AllMimeRender ctypes (Envelope '[e] ())
        , CreateRespBodiesFor es ctypes
