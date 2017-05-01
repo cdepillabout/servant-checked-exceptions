@@ -115,4 +115,3 @@ main = do
 
 baseUrl :: BaseUrl
 baseUrl = BaseUrl Http "localhost" port ""
-
