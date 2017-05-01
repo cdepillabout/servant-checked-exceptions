@@ -379,6 +379,48 @@ openUnionMatch
   => OpenUnion as -> Maybe a
 openUnionMatch = preview openUnionPrism
 
+-- | An alternate case anaylsis for an 'OpenUnion'.  This method uses a tuple
+-- containing handlers for each potential value of the 'OpenUnion'.  This is
+-- somewhat similar to the 'Control.Exception.catches' function.
+--
+-- Here is an example of handling an 'OpenUnion' with two possible values.
+-- Notice that a normal tuple is used:
+--
+-- >>> let u = openUnionLift (3 :: Int) :: OpenUnion '[Int, String]
+-- >>> let intHandler = (\int -> show int) :: Int -> String
+-- >>> let strHandler = (\str -> str) :: String -> String
+-- >>> catchesOpenUnion (intHandler, strHandler) u :: String
+-- "3"
+--
+-- Given an 'OpenUnion' like @'OpenUnion' \'['Int', 'String']@, the type of
+-- 'catchesOpenUnion' becomes the following:
+--
+-- @
+--   'catchesOpenUnion'
+--     :: ('Int' -> 'String', 'String' -> 'String')
+--     -> 'OpenUnion' \'['Int', 'String']
+--     -> 'String'
+-- @
+--
+-- Here is an example of handling an 'OpenUnion' with three possible values:
+--
+-- >>> let u = openUnionLift ("hello" :: String) :: OpenUnion '[Int, String, Double]
+-- >>> let intHandler = (\int -> show int) :: Int -> String
+-- >>> let strHandler = (\str -> str) :: String -> String
+-- >>> let dblHandler = (\dbl -> "got a double") :: Double -> String
+-- >>> catchesOpenUnion (intHandler, strHandler, dblHandler) u :: String
+-- "hello"
+--
+-- Here is an example of handling an 'OpenUnion' with only one possible value.
+-- Notice how a tuple is not used, just a single value:
+--
+-- >>> let u = openUnionLift (2.2 :: Double) :: OpenUnion '[Double]
+-- >>> let dblHandler = (\dbl -> "got a double") :: Double -> String
+-- >>> catchesOpenUnion dblHandler u :: String
+-- "got a double"
+--
+-- When working with large 'OpenUnion's, it can be easier to use
+-- 'catchesOpenUnion' than 'openUnion'.
 catchesOpenUnion
   :: ToOpenProduct tuple (ReturnX x as)
   => tuple -> OpenUnion as -> x
