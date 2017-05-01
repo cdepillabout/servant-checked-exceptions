@@ -11,6 +11,19 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
+{- |
+Module      :  Servant.Checked.Exceptions.Internal.Servant.Client
+
+Copyright   :  Dennis Gosnell 2017
+License     :  BSD3
+
+Maintainer  :  Dennis Gosnell (cdep.illabout@gmail.com)
+Stability   :  experimental
+Portability :  unknown
+
+This module only exports 'HasClient' instances for 'Throws' and 'Throwing'.
+-}
+
 module Servant.Checked.Exceptions.Internal.Servant.Client where
 
 import Data.Proxy (Proxy(Proxy))
