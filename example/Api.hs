@@ -32,6 +32,9 @@ type Api = ApiStrictSearch :<|> ApiLaxSearch
 -- 'SearchResponse'.  It potentially returns a 'BadSearchTermErr' if your query
 -- is not the string @\"hello\"@.  It returns an 'IncorrectCapitialization'
 -- error if your query is not capitalized like @\"Hello\"@.
+--
+-- Notice how we are using 'Throws' to indicate we will potentially throw an
+-- error.  Also, notice how we can list multiple 'Throws'.
 type ApiStrictSearch =
   "strict-search" :>
   Capture "query" SearchQuery :>
