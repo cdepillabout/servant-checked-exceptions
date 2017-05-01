@@ -300,6 +300,85 @@ errEnvelopeMatch
   => Envelope es a -> Maybe e
 errEnvelopeMatch = preview _ErrEnvelopeErr
 
+-- | An alternate case anaylsis for an 'Envelope'.  This method uses a tuple
+-- containing handlers for each potential value of the 'Envelope'.  This is
+-- somewhat similar to the 'Control.Exception.catches' function.
+--
+-- Here is an example of handling an 'SuccEnvelope' with two possible error values.
+-- Notice that a normal tuple is used:
+--
+-- >>> let env = toSuccEnvelope 2.0 :: Envelope '[Int, String] Double
+-- >>> let intHandler = (\int -> show int) :: Int -> String
+-- >>> let strHandler = (\str -> str) :: String -> String
+-- >>> let succHandler = (\dbl -> "got a double") :: Double -> String
+-- >>> catchesEnvelope (intHandler, strHandler) succHandler env :: String
+-- "got a double"
+--
+-- Here is an example of handling an 'ErrEnvelope' with two possible error values.
+-- Notice that a normal tuple is used to hold the handlers:
+--
+-- >>> let env = toErrEnvelope (3 :: Int) :: Envelope '[Int, String] Double
+-- >>> let intHandler = (\int -> show int) :: Int -> String
+-- >>> let strHandler = (\str -> str) :: String -> String
+-- >>> let succHandler = (\dbl -> "got a double") :: Double -> String
+-- >>> catchesEnvelope (intHandler, strHandler) succHandler env :: String
+-- "3"
+--
+-- Given an 'Envelope' like @'Envelope' \'['Int', 'String'] Double@, the type of
+-- 'catchesEnvelope' becomes the following:
+--
+-- @
+--   'catchesEnvelope'
+--     :: ('Int' -> x, 'String' -> x)
+--     -> ('Double' -> x)
+--     -> 'Envelope' \'['Int', 'String'] Double
+--     -> x
+-- @
+--
+-- Here is an example of handling an 'ErrEnvelope' with three possible values.
+-- Notice how a 3-tuple is used to hold the handlers:
+--
+-- >>> let env = toErrEnvelope ("hi" :: String) :: Envelope '[Int, String, Char] Double
+-- >>> let intHandler = (\int -> show int) :: Int -> String
+-- >>> let strHandler = (\str -> str) :: String -> String
+-- >>> let chrHandler = (\chr -> [chr]) :: Char -> String
+-- >>> let succHandler = (\dbl -> "got a double") :: Double -> String
+-- >>> catchesEnvelope (intHandler, strHandler, chrHandler) succHandler env :: String
+-- "hi"
+--
+-- Given an 'Envelope' like @'Envelope' \'['Int', 'String', 'Char'] Double@,
+-- the type of 'catchesEnvelope' becomes the following:
+--
+-- @
+--   'catchesEnvelope'
+--     :: ('Int' -> x, 'String' -> x, 'Char' -> x)
+--     -> ('Double' -> x)
+--     -> 'Envelope' \'['Int', 'String', 'Char'] Double
+--     -> x
+-- @
+--
+-- Here is an example of handling an 'ErrEnvelope' with only one possible error value.
+-- Notice that a normal hanlders is used (not a tuple):
+--
+-- >>> let env = toErrEnvelope (3 :: Int) :: Envelope '[Int] Double
+-- >>> let intHandler = (\int -> show int) :: Int -> String
+-- >>> let succHandler = (\dbl -> "got a double") :: Double -> String
+-- >>> catchesEnvelope intHandler succHandler env :: String
+-- "3"
+--
+-- Given an 'Envelope' like @'Envelope' \'['Int'] Double@, the type of
+-- 'catchesEnvelope' becomes the following:
+--
+-- @
+--   'catchesEnvelope'
+--     :: ('Int' -> x)
+--     -> ('Double' -> x)
+--     -> 'Envelope' \'['Int'] Double
+--     -> x
+-- @
+--
+-- When working with an 'Envelope' with a large number of possible error types,
+-- it can be easier to use 'catchesEnvelope' than 'envelope'.
 catchesEnvelope
   :: forall tuple es a x.
      ToOpenProduct tuple (ReturnX x es)
