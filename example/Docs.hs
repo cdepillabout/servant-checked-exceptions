@@ -31,6 +31,12 @@ import Api
         IncorrectCapitalization(IncorrectCapitalization), SearchQuery,
         SearchResponse)
 
+-- This module prints out documentation for 'Api'.
+--
+-- Notice how we only need 'ToSample' instances for the two errors we are
+-- throwing with 'Throws': 'BadSearchTermErr' and 'IncorrectCapitialization'.
+-- We don't have to directly worry about writing instances for 'Envelope'.
+
 instance ToSample SearchResponse where
   toSamples :: Proxy SearchResponse -> [(Text, SearchResponse)]
   toSamples Proxy = [("This is a successful response.", "good")]
@@ -52,5 +58,6 @@ instance ToSample IncorrectCapitalization where
       , IncorrectCapitalization)
     ]
 
+-- | Print the documentation rendered as markdown to stdout.
 main :: IO ()
 main = putStrLn . markdown $ docs (Proxy :: Proxy Api)
