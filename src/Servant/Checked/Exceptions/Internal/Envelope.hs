@@ -324,14 +324,14 @@ errEnvelopeMatch = preview _ErrEnvelopeErr
 -- >>> catchesEnvelope (intHandler, strHandler) succHandler env :: String
 -- "3"
 --
--- Given an 'Envelope' like @'Envelope' \'['Int', 'String'] Double@, the type of
+-- Given an 'Envelope' like @'Envelope' \'['Int', 'String'] 'Double'@, the type of
 -- 'catchesEnvelope' becomes the following:
 --
 -- @
 --   'catchesEnvelope'
 --     :: ('Int' -> x, 'String' -> x)
 --     -> ('Double' -> x)
---     -> 'Envelope' \'['Int', 'String'] Double
+--     -> 'Envelope' \'['Int', 'String'] 'Double'
 --     -> x
 -- @
 --
@@ -346,19 +346,19 @@ errEnvelopeMatch = preview _ErrEnvelopeErr
 -- >>> catchesEnvelope (intHandler, strHandler, chrHandler) succHandler env :: String
 -- "hi"
 --
--- Given an 'Envelope' like @'Envelope' \'['Int', 'String', 'Char'] Double@,
+-- Given an 'Envelope' like @'Envelope' \'['Int', 'String', 'Char'] 'Double'@,
 -- the type of 'catchesEnvelope' becomes the following:
 --
 -- @
 --   'catchesEnvelope'
 --     :: ('Int' -> x, 'String' -> x, 'Char' -> x)
 --     -> ('Double' -> x)
---     -> 'Envelope' \'['Int', 'String', 'Char'] Double
+--     -> 'Envelope' \'['Int', 'String', 'Char'] 'Double'
 --     -> x
 -- @
 --
 -- Here is an example of handling an 'ErrEnvelope' with only one possible error value.
--- Notice that a normal hanlders is used (not a tuple):
+-- Notice that a normal handler is used (not a tuple):
 --
 -- >>> let env = toErrEnvelope (3 :: Int) :: Envelope '[Int] Double
 -- >>> let intHandler = (\int -> show int) :: Int -> String
@@ -366,14 +366,14 @@ errEnvelopeMatch = preview _ErrEnvelopeErr
 -- >>> catchesEnvelope intHandler succHandler env :: String
 -- "3"
 --
--- Given an 'Envelope' like @'Envelope' \'['Int'] Double@, the type of
+-- Given an 'Envelope' like @'Envelope' \'['Int'] 'Double'@, the type of
 -- 'catchesEnvelope' becomes the following:
 --
 -- @
 --   'catchesEnvelope'
 --     :: ('Int' -> x)
 --     -> ('Double' -> x)
---     -> 'Envelope' \'['Int'] Double
+--     -> 'Envelope' \'['Int'] 'Double'
 --     -> x
 -- @
 --
