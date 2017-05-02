@@ -12,8 +12,78 @@ Servant.Checked.Exceptions
 Servant api on the type level.  It allows easy composition between different
 error types.
 
-For documentation and usage examples, see the
+`servant-checked-exceptions` provides the
+[`Throws`](https://hackage.haskell.org/package/servant-checked-exceptions/docs/Servant-Checked-Exceptions.html#t:Throws)
+data type to signify which errors can be thrown by an api.  For instance,
+imagine a `getAuthor` api that returns an `Author` based on an `AuthorId`:
+
+```haskell
+-- This is a servant-compatible type describing our api.
+type Api =
+  "author" :>
+  Capture "author-id" AuthorId :>
+  Throws CouldNotConnectToDbError :>
+  Throws AuthorNotFoundError :>
+  Get '[JSON] Author
+
+-- These are the two errors that can be thrown:
+data CouldNotConnectToDbError = CouldNotConnectToDbError
+data AuthorNotFoundError = AuthorNotFoundError
+```
+
+The corresponding handler function uses the
+[`Envelope`](https://hackage.haskell.org/package/servant-checked-exceptions/docs/Servant-Checked-Exceptions.html#t:Envelope)
+data type to model the possibility of returning an `Author` successfully, or
+either `CouldNotConnectToDbError` or `AuthorNotFoundError` unsuccessfully.
+Internally, `Envelope` is using an open sum-type to easily represent multiple
+different errors:
+
+```haskell
+getAuthorHandler
+  :: AuthorId
+  -> Handler (Envelope '[DatabaseError, AuthorNotFoundError] Author)
+getAuthorHandler authorId = ...
+```
+
+For more documentation and usage examples, see the
 [documentation](https://hackage.haskell.org/package/servant-checked-exceptions) on Hackage.
+
+## Why would I want to use this?
+
+Using `Envelope` with its open sum-type to represent errors gives us an easy
+way to reuse errors on multiple routes.
+
+For instance, imagine that we had another api for updating an author's name,
+given the author's ID.  Using `Throws` and `Envelope`, it might look like this:
+
+```haskell
+type Api =
+  "update-author-name" :>
+  Capture "author-id" AuthorId :>
+  Capture "author-name" AuthorName :>
+  Throws CouldNotConnectToDbError :>
+  Throws AuthorNotFoundError :>
+  Throws AuthorNameTooShort :>
+  Post '[JSON] Author
+
+data AuthorNameTooShort = AuthorNameTooShort
+
+postChangeAuthorName
+  :: AuthorId
+  -> AuthorName
+  -> Handler (Envelope '[DatabaseError, AuthorNotFoundError, AuthorNameTooShort] Author)
+postChangeAuthorName authorId newAuthorName = ...
+```
+
+We are able to reuse the `DatabaseError` and `AuthorNotFoundError`.  If we try
+to return an error that is not declared using `Throws`, GHC will give us an
+error.  We get flexiblity and type-safety.
+
+When using [servant-docs](https://hackage.haskell.org/package/servant-docs) to
+create documentation, only one instance of `ToSample` needs to be created for
+each error (`DatabaseError`, `AuthorNotFoundError`, and `AuthorNameTooShort`).
+Multiple instances of `ToSample` do not need to be created for _every_
+different `Envelope` used in a handler.
 
 ## Example
 
