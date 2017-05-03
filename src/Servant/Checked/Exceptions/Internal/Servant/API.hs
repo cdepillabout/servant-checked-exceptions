@@ -1,5 +1,7 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
 
 {- |
 Module      :  Servant.Checked.Exceptions.Internal.Servant.API
@@ -16,6 +18,10 @@ This module defines the 'Throws' and 'Throwing' types.
 
 module Servant.Checked.Exceptions.Internal.Servant.API where
 
+import Servant.API ((:>))
+
+import Servant.Checked.Exceptions.Internal.Util (Snoc)
+
 -- | 'Throws' is used in Servant API definitions and signifies that an API will
 -- throw the given error.
 --
@@ -28,3 +34,12 @@ data Throws (e :: *)
 
 -- | This is used internally and should not be used by end-users.
 data Throwing (e :: [*])
+
+-- | Used by the 'HasServer' and 'HasClient' instances for
+-- @'Throwing' es ':>' api ':>' apis@ to detect @'Throwing' es@ followed
+-- immediately by @'Throws' e@.
+type family ThrowingNonterminal api where
+  ThrowingNonterminal (Throwing es :> Throws e :> api) =
+    Throwing (Snoc es e) :> api
+  ThrowingNonterminal (Throwing es :> c :> api) =
+    c :> Throwing es :> api

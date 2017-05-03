@@ -34,8 +34,7 @@ import Servant
 
 import Servant.Checked.Exceptions.Internal.Envelope (Envelope)
 import Servant.Checked.Exceptions.Internal.Servant.API
-       (Throws, Throwing)
-import Servant.Checked.Exceptions.Internal.Util (Snoc)
+       (Throws, Throwing, ThrowingNonterminal)
 
 -- TODO: Make sure to also account for when headers are being used.
 
@@ -82,14 +81,6 @@ instance HasServer ((Throwing es :> api1) :<|> (Throwing es :> api2)) context =>
     -> Delayed env (ServerT ((Throwing es :> api1) :<|> (Throwing es :> api2)) Handler)
     -> Router env
   route _ = route (Proxy :: Proxy ((Throwing es :> api1) :<|> (Throwing es :> api2)))
-
--- | Used by the 'HasServer' instance for @'Throwing' es ':>' api ':>' apis@ to
--- detect @'Throwing' es@ followed immediately by @'Throws' e@.
-type family ThrowingNonterminal api where
-  ThrowingNonterminal (Throwing es :> Throws e :> api) =
-    Throwing (Snoc es e) :> api
-  ThrowingNonterminal (Throwing es :> c :> api) =
-    c :> Throwing es :> api
 
 -- | When a @'Throws' e@ comes immediately after a @'Throwing' es@, 'Snoc' the
 -- @e@ onto the @es@. Otherwise, if @'Throws' e@ comes before any other
