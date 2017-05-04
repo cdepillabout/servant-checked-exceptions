@@ -118,29 +118,23 @@ test-suite servant-checked-exceptions-doctest
   default-language:    Haskell2010
   ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
 
--- test-suite servant-checked-exceptions-test
---   type:                exitcode-stdio-1.0
---   main-is:             Spec.hs
---   other-modules:       Spec.ApiSpec
---                      , Spec.HelperFuncSpec
---                      , Spec.ServerSpec
---                      , Spec.TastyHelpers
---                      , Spec.TestDirLocation
---   hs-source-dirs:      test
---   build-depends:       base
---                      , bytestring
---                      , directory
---                      , filepath
---                      , hspec-wai
---                      , tasty
---                      , tasty-hspec
---                      , tasty-hunit
---                      , servant
---                      , servant-checked-exceptions
---                      , servant-server
---                      , wai
---   default-language:    Haskell2010
---   ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N -fwarn-incomplete-uni-patterns -fwarn-incomplete-record-updates -fwarn-monomorphism-restriction
+test-suite servant-checked-exceptions-test
+  type:                exitcode-stdio-1.0
+  main-is:             Spec.hs
+  other-modules:
+  hs-source-dirs:      test
+  build-depends:       base
+                     , bytestring
+                     , hspec-wai
+                     , tasty
+                     , tasty-hspec
+                     , tasty-hunit
+                     , servant
+                     , servant-checked-exceptions
+                     , servant-server
+                     , wai
+  default-language:    Haskell2010
+  ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N -fwarn-incomplete-uni-patterns -fwarn-incomplete-record-updates -fwarn-monomorphism-restriction
 
 source-repository head
   type:     git
