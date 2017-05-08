@@ -134,6 +134,8 @@ pureSuccEnvelope = pure . toSuccEnvelope
 
 -- | Case analysis for 'Envelope's.
 --
+-- ==== __Examples__
+--
 --  Here is an example of matching on a 'SuccEnvelope':
 --
 -- >>> let env = toSuccEnvelope "hello" :: Envelope '[Double, Int] String
@@ -151,6 +153,8 @@ envelope f _ (ErrEnvelope es) = f es
 envelope _ f (SuccEnvelope a) = f a
 
 -- | Just like 'Data.Either.fromEither' but for 'Envelope'.
+--
+-- ==== __Examples__
 --
 --  Here is an example of successfully matching:
 --
@@ -199,6 +203,8 @@ isoEnvelopeEither = iso envelopeToEither eitherToEnvelope
 
 -- | Lens-compatible 'Prism' to pull out an @a@ from a 'SuccEnvelope'.
 --
+-- ==== __Examples__
+--
 -- Use '_SuccEnvelope' to construct an 'Envelope':
 --
 -- >>> review _SuccEnvelope "hello" :: Envelope '[Double] String
@@ -223,6 +229,10 @@ _SuccEnvelope = prism SuccEnvelope $ envelope (Left . ErrEnvelope) Right
 -- | Lens-compatible 'Prism' to pull out an @'OpenUnion' es@ from a
 -- 'ErrEnvelope'.
 --
+-- Most users will not use '_ErrEnvelope', but instead '_ErrEnvelopeErr'.
+--
+-- ==== __Examples__
+--
 -- Use '_ErrEnvelope' to construct an 'Envelope':
 --
 -- >>> let string = "hello" :: String
@@ -243,12 +253,14 @@ _SuccEnvelope = prism SuccEnvelope $ envelope (Left . ErrEnvelope) Right
 -- >>> let env' = toSuccEnvelope () :: Envelope '[Double] ()
 -- >>> preview _ErrEnvelope env' :: Maybe (OpenUnion '[Double])
 -- Nothing
---
--- Most users will not use '_ErrEnvelope', but instead '_ErrEnvelopeErr'.
 _ErrEnvelope :: Prism (Envelope es a) (Envelope es' a) (OpenUnion es) (OpenUnion es')
 _ErrEnvelope = prism ErrEnvelope $ envelope Right (Left . SuccEnvelope)
 
 -- | Lens-compatible 'Prism' to pull out a specific @e@ from an 'ErrEnvelope'.
+--
+-- Most users will use '_ErrEnvelopeErr' instead of '_ErrEnvelope'.
+--
+-- ==== __Examples__
 --
 -- Use '_ErrEnvelopeErr' to construct an 'Envelope':
 --
@@ -272,12 +284,12 @@ _ErrEnvelope = prism ErrEnvelope $ envelope Right (Left . SuccEnvelope)
 -- >>> let env'' = toErrEnvelope 'c' :: Envelope '[Double, Char] ()
 -- >>> preview _ErrEnvelopeErr env'' :: Maybe Double
 -- Nothing
---
--- Most users will use '_ErrEnvelopeErr' instead of '_ErrEnvelope'.
 _ErrEnvelopeErr :: forall e es a. IsMember e es => Prism' (Envelope es a) e
 _ErrEnvelopeErr = _ErrEnvelope . openUnionPrism
 
 -- | Pull out a specific @e@ from an 'ErrEnvelope'.
+--
+-- ==== __Examples__
 --
 -- Successfully pull out an @e@:
 --
@@ -303,6 +315,11 @@ errEnvelopeMatch = preview _ErrEnvelopeErr
 -- | An alternate case anaylsis for an 'Envelope'.  This method uses a tuple
 -- containing handlers for each potential value of the 'Envelope'.  This is
 -- somewhat similar to the 'Control.Exception.catches' function.
+--
+-- When working with an 'Envelope' with a large number of possible error types,
+-- it can be easier to use 'catchesEnvelope' than 'envelope'.
+--
+-- ==== __Examples__
 --
 -- Here is an example of handling an 'SuccEnvelope' with two possible error values.
 -- Notice that a normal tuple is used:
@@ -376,17 +393,12 @@ errEnvelopeMatch = preview _ErrEnvelopeErr
 --     -> 'Envelope' \'['Int'] 'Double'
 --     -> x
 -- @
---
--- When working with an 'Envelope' with a large number of possible error types,
--- it can be easier to use 'catchesEnvelope' than 'envelope'.
 catchesEnvelope
   :: forall tuple es a x.
      ToOpenProduct tuple (ReturnX x es)
   => tuple -> (a -> x) -> Envelope es a -> x
 catchesEnvelope _ a2x (SuccEnvelope a) = a2x a
 catchesEnvelope tuple _ (ErrEnvelope u) = catchesOpenUnion tuple u
-
--- data EnvelopeHandler es x = forall e. IsMember e es => EnvelopeHandler (e -> x)
 
 -- | This 'ToJSON' instance encodes an 'Envelope' as an object with one of two
 -- keys depending on whether it is a 'SuccEnvelope' or an 'ErrEnvelope'.

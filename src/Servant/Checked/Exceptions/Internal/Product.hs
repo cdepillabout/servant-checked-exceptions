@@ -122,7 +122,9 @@ instance
 
 -- | Turn a tuple into an 'OpenProduct'.
 --
--- For example, turn a triple into an 'OpenProduct':
+-- ==== __Examples__
+--
+-- Turn a triple into an 'OpenProduct':
 --
 -- >>> tupleToOpenProduct (1, 2.0, "hello") :: OpenProduct '[Int, Double, String]
 -- Cons (Identity 1) (Cons (Identity 2.0) (Cons (Identity "hello") Nil))

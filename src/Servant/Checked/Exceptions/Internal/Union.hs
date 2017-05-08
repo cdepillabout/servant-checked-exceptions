@@ -93,6 +93,8 @@ import Servant.Checked.Exceptions.Internal.Util (ReturnX)
 
 -- | A partial relation that gives the index of a value in a list.
 --
+-- ==== __Examples__
+--
 -- Find the first item:
 --
 -- >>> import Data.Type.Equality ((:~:)(Refl))
@@ -126,6 +128,8 @@ data Union (f :: u -> *) (as :: [u]) where
 
 -- | Case analysis for 'Union'.
 --
+-- ==== __Examples__
+--
 --  Here is an example of matching on a 'This':
 --
 -- >>> let u = This (Identity "hello") :: Union Identity '[String, Int]
@@ -149,6 +153,8 @@ absurdUnion u = case u of {}
 
 -- | Map over the interpretation @f@ in the 'Union'.
 --
+-- ==== __Examples__
+--
 -- Here is an example of changing a @'Union' 'Identity' \'['String', 'Int']@ to
 -- @'Union' 'Maybe' \'['String', 'Int']@:
 --
@@ -170,6 +176,8 @@ catchesUnionProduct Nil _ = undefined
 -- | An alternate case anaylsis for a 'Union'.  This method uses a tuple
 -- containing handlers for each potential value of the 'Union'.  This is
 -- somewhat similar to the 'Control.Exception.catches' function.
+--
+-- ==== __Examples__
 --
 -- Here is an example of handling a 'Union' with two possible values.  Notice
 -- that a normal tuple is used:
@@ -198,6 +206,8 @@ catchesUnion tuple u = catchesUnionProduct (tupleToProduct tuple) u
 
 -- | Lens-compatible 'Prism' for 'This'.
 --
+-- ==== __Examples__
+--
 -- Use '_This' to construct a 'Union':
 --
 -- >>> review _This (Just "hello") :: Union Maybe '[String]
@@ -219,6 +229,8 @@ _This = prism This (union (Left . That) Right)
 {-# INLINE _This #-}
 
 -- | Lens-compatible 'Prism' for 'That'.
+--
+-- ==== __Examples__
 --
 -- Use '_That' to construct a 'Union':
 --
@@ -296,6 +308,8 @@ type OpenUnion = Union Identity
 
 -- | Case analysis for 'OpenUnion'.
 --
+-- ==== __Examples__
+--
 --  Here is an example of successfully matching:
 --
 -- >>> let string = "hello" :: String
@@ -314,6 +328,8 @@ openUnion
 openUnion onThat onThis = union onThat (onThis . runIdentity)
 
 -- | This is similar to 'fromMaybe' for an 'OpenUnion'.
+--
+-- ==== __Examples__
 --
 --  Here is an example of successfully matching:
 --
@@ -360,6 +376,8 @@ openUnionLift = review openUnionPrism
 
 -- | Just like 'unionMatch' but for 'OpenUnion'.
 --
+-- ==== __Examples__
+--
 -- Successful matching:
 --
 -- >>> let string = "hello" :: String
@@ -382,6 +400,11 @@ openUnionMatch = preview openUnionPrism
 -- | An alternate case anaylsis for an 'OpenUnion'.  This method uses a tuple
 -- containing handlers for each potential value of the 'OpenUnion'.  This is
 -- somewhat similar to the 'Control.Exception.catches' function.
+--
+-- When working with large 'OpenUnion's, it can be easier to use
+-- 'catchesOpenUnion' than 'openUnion'.
+--
+-- ==== __Examples__
 --
 -- Here is an example of handling an 'OpenUnion' with two possible values.
 -- Notice that a normal tuple is used:
@@ -418,9 +441,6 @@ openUnionMatch = preview openUnionPrism
 -- >>> let dblHandler = (\dbl -> "got a double") :: Double -> String
 -- >>> catchesOpenUnion dblHandler u :: String
 -- "got a double"
---
--- When working with large 'OpenUnion's, it can be easier to use
--- 'catchesOpenUnion' than 'openUnion'.
 catchesOpenUnion
   :: ToOpenProduct tuple (ReturnX x as)
   => tuple -> OpenUnion as -> x
