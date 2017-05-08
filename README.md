@@ -22,19 +22,19 @@ imagine a `getAuthor` api that returns an `Author` based on an `AuthorId`:
 type Api =
   "author" :>
   Capture "author-id" AuthorId :>
-  Throws CouldNotConnectToDbError :>
+  Throws DatabaseError :>
   Throws AuthorNotFoundError :>
   Get '[JSON] Author
 
 -- These are the two errors that can be thrown:
-data CouldNotConnectToDbError = CouldNotConnectToDbError
+data DatabaseError = DatabaseError
 data AuthorNotFoundError = AuthorNotFoundError
 ```
 
 The corresponding handler function uses the
 [`Envelope`](https://hackage.haskell.org/package/servant-checked-exceptions/docs/Servant-Checked-Exceptions.html#t:Envelope)
 data type to model the possibility of returning an `Author` successfully, or
-either `CouldNotConnectToDbError` or `AuthorNotFoundError` unsuccessfully.
+either `DatabaseError` or `AuthorNotFoundError` unsuccessfully.
 Internally, `Envelope` is using an open sum-type to easily represent multiple
 different errors:
 
@@ -61,7 +61,7 @@ type Api =
   "update-author-name" :>
   Capture "author-id" AuthorId :>
   Capture "author-name" AuthorName :>
-  Throws CouldNotConnectToDbError :>
+  Throws DatabaseError :>
   Throws AuthorNotFoundError :>
   Throws AuthorNameTooShort :>
   Post '[JSON] Author
