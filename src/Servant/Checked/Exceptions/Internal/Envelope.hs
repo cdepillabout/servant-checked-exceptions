@@ -425,7 +425,7 @@ instance (ToJSON (OpenUnion es), ToJSON a) => ToJSON (Envelope es a) where
 -- don't overlap.
 --
 -- For an explanation, see the documentation on the 'FromJSON' instance for
--- 'Union'.
+-- 'Servant.Checked.Exceptions.Internal.Union.Union'.
 instance (FromJSON (OpenUnion es), FromJSON a) => FromJSON (Envelope es a) where
   parseJSON :: Value -> Parser (Envelope es a)
   parseJSON = withObject "Envelope" $ \obj ->

@@ -492,9 +492,10 @@ instance Read (Union f '[]) where
 -- >>> p >>= openUnionMatch :: Maybe String
 -- Just "hello"
 --
--- However, imagine are we working with a 'Union' of a 'String' and 'Text'.
--- @\"hello\"@ can be 'read' as both a 'String' and 'Text'.  However, in the
--- following example, it can only be read as a 'String':
+-- However, imagine are we working with a 'Union' of a 'String' and
+-- 'Data.Text.Text'.  @\"hello\"@ can be 'read' as both a 'String' and
+-- 'Data.Text.Text'.  However, in the following example, it can only be read as
+-- a 'String':
 --
 -- >>> let q = readMaybe "Identity \"hello\"" :: Maybe (Union Identity '[String, Text])
 -- >>> q
