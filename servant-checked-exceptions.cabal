@@ -30,12 +30,14 @@ library
                      , Servant.Checked.Exceptions.Internal.Servant.Server
                      , Servant.Checked.Exceptions.Internal.Union
                      , Servant.Checked.Exceptions.Internal.Util
+  other-modules:       Servant.Checked.Exceptions.Internal.Prism
   build-depends:       base >= 4.8 && < 5
                      , aeson
                      , bytestring
                      , deepseq
                      , http-media
-                     , lens
+                     , profunctors
+                     , tagged
                      , servant >= 0.9
                      , servant-client >= 0.9
                      , servant-docs >= 0.9

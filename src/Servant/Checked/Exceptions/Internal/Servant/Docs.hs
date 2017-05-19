@@ -28,9 +28,9 @@ This module exports 'HasDocs' instances for 'Throws' and 'Throwing'.
 
 module Servant.Checked.Exceptions.Internal.Servant.Docs where
 
-import Control.Lens ((&), (<>~))
 import Data.Proxy (Proxy(Proxy))
 import Data.ByteString.Lazy (ByteString)
+import Data.Function ((&))
 import Data.Monoid ((<>))
 import Data.Text (Text)
 import Network.HTTP.Media (MediaType)
@@ -43,6 +43,7 @@ import Servant.Docs.Internal (apiEndpoints, respBody, response)
 
 import Servant.Checked.Exceptions.Internal.Envelope
        (Envelope, toErrEnvelope, toSuccEnvelope)
+import Servant.Checked.Exceptions.Internal.Prism ((<>~))
 import Servant.Checked.Exceptions.Internal.Servant.API
        (Throws, Throwing)
 import Servant.Checked.Exceptions.Internal.Util (Snoc)

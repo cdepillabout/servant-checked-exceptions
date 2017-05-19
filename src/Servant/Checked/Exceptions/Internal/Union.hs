@@ -67,7 +67,6 @@ module Servant.Checked.Exceptions.Internal.Union
 
 -- Imports for Union stuff
 import Control.Applicative ((<|>))
-import Control.Lens (Prism, Prism', iso, preview, prism, prism', review)
 import Control.DeepSeq (NFData(rnf))
 import Data.Aeson
        (FromJSON(parseJSON), ToJSON(toJSON), Value)
@@ -76,6 +75,7 @@ import Data.Functor.Identity (Identity(Identity, runIdentity))
 import Data.Typeable (Typeable)
 import Text.Read (Read(readPrec), ReadPrec, (<++))
 
+import Servant.Checked.Exceptions.Internal.Prism (Prism, Prism', iso, preview, prism, prism', review)
 import Servant.Checked.Exceptions.Internal.Product
        (Product(Cons, Nil), ToOpenProduct, ToProduct, tupleToOpenProduct,
         tupleToProduct)
