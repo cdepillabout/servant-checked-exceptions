@@ -1,5 +1,18 @@
 {-# LANGUAGE RankNTypes #-}
 
+{- |
+Module      :  Servant.Checked.Exceptions.Internal.Envelope
+License     :  BSD3
+Maintainer  :  Dennis Gosnell (cdep.illabout@gmail.com)
+Stability   :  experimental
+Portability :  unknown
+
+These functions are for working with Optics popularized by the
+<https://hackage.haskell.org/package/lens lens> package. Documentation can be
+found in the lens package.  These functions are redefined here to remove the
+dependency on the lens package.
+-}
+
 module Servant.Checked.Exceptions.Internal.Prism
   ( Prism
   , prism
