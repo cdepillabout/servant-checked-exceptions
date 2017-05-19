@@ -87,7 +87,7 @@ import Servant.Checked.Exceptions.Internal.Util (ReturnX)
 -- >>> import Data.Text (Text)
 -- >>> import System.IO (stdout)
 -- >>> import Text.Read (readMaybe)
--- >>> import Servant.Checked.Exceptions.Internal.Prism(review)
+-- >>> import Servant.Checked.Exceptions.Internal.Prism (review)
 -- >>> let putByteStrLn = hPutStrLn stdout
 
 
