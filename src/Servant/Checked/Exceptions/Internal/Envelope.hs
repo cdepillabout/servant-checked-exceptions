@@ -60,7 +60,6 @@ module Servant.Checked.Exceptions.Internal.Envelope
   ) where
 
 import Control.Applicative ((<|>))
-import Control.Lens (Iso, Prism, Prism', iso, preview, prism)
 import Control.Monad.Fix (MonadFix(mfix))
 import Data.Aeson
        (FromJSON(parseJSON), ToJSON(toJSON), Value, (.=), (.:), object,
@@ -71,6 +70,8 @@ import Data.Semigroup (Semigroup((<>), stimes), stimesIdempotent)
 import Data.Typeable (Typeable)
 import GHC.Generics (Generic)
 
+import Servant.Checked.Exceptions.Internal.Prism
+       (Iso, Prism, Prism', iso, preview, prism)
 import Servant.Checked.Exceptions.Internal.Product (ToOpenProduct)
 import Servant.Checked.Exceptions.Internal.Union
        (IsMember, OpenUnion, catchesOpenUnion, openUnionLift,
@@ -81,12 +82,12 @@ import Servant.Checked.Exceptions.Internal.Util (ReturnX)
 -- $setup
 -- >>> :set -XDataKinds
 -- >>> :set -XTypeOperators
--- >>> import Control.Lens (preview, review)
 -- >>> import Data.Aeson (encode)
 -- >>> import Data.ByteString.Lazy.Char8 (hPutStrLn)
 -- >>> import Data.Text (Text)
 -- >>> import System.IO (stdout)
 -- >>> import Text.Read (readMaybe)
+-- >>> import Servant.Checked.Exceptions.Internal.Prism(review)
 -- >>> let putByteStrLn = hPutStrLn stdout
 
 
