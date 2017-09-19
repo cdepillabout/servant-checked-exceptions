@@ -32,6 +32,11 @@ import Servant.Checked.Exceptions.Internal.Util (Snoc)
 -- >>> type API = Throws String :> Get '[JSON] Int
 data Throws (e :: *)
 
+-- | 'NoThrow' is used to indicate that an API will not throw an error, but
+-- that it will still return a response wrapped in a
+-- 'Servant.Checked.Exceptions.Internal.Envelope.Envelope'.
+data NoThrow
+
 -- | This is used internally and should not be used by end-users.
 data Throwing (e :: [*])
 

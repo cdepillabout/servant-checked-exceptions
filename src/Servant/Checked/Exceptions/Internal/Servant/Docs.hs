@@ -45,7 +45,7 @@ import Servant.Checked.Exceptions.Internal.Envelope
        (Envelope, toErrEnvelope, toSuccEnvelope)
 import Servant.Checked.Exceptions.Internal.Prism ((<>~))
 import Servant.Checked.Exceptions.Internal.Servant.API
-       (Throws, Throwing)
+       (NoThrow, Throws, Throwing)
 import Servant.Checked.Exceptions.Internal.Util (Snoc)
 
 -- TODO: Make sure to also account for when headers are being used.
@@ -80,6 +80,21 @@ instance
             docOpts
     in api & apiEndpoints . traverse . response . respBody <>~
         createRespBodiesFor (Proxy :: Proxy es) (Proxy :: Proxy ctypes)
+
+-- | When 'NoThrow' comes before a 'Verb', generate the documentation for
+-- the same 'Verb', but returning an @'Envelope' \'[]@.
+instance (HasDocs (Verb method status ctypes (Envelope '[] a)))
+    => HasDocs (NoThrow :> Verb method status ctypes a) where
+  docsFor
+    :: Proxy (NoThrow :> Verb method status ctypes a)
+    -> (Endpoint, Action)
+    -> DocOptions
+    -> API
+  docsFor Proxy (endpoint, action) docOpts =
+    docsFor
+      (Proxy :: Proxy (Verb method status ctypes (Envelope '[] a)))
+      (endpoint, action)
+      docOpts
 
 -- | Create samples for a given @list@ of types, under given @ctypes@.
 --

@@ -34,7 +34,7 @@ import Servant
 
 import Servant.Checked.Exceptions.Internal.Envelope (Envelope)
 import Servant.Checked.Exceptions.Internal.Servant.API
-       (Throws, Throwing, ThrowingNonterminal)
+       (NoThrow, Throws, Throwing, ThrowingNonterminal)
 
 -- TODO: Make sure to also account for when headers are being used.
 
@@ -67,6 +67,21 @@ instance (HasServer (Verb method status ctypes (Envelope es a)) context) =>
     -> Router env
   route _ = route (Proxy :: Proxy (Verb method status ctypes (Envelope es a)))
 
+-- | When 'NoThrow' comes before a 'Verb', change it into the same 'Verb'
+-- but returning an @'Envelope' \'[]@.
+instance (HasServer (Verb method status ctypes (Envelope '[] a)) context) =>
+    HasServer (NoThrow :> Verb method status ctypes a) context where
+
+  type ServerT (NoThrow :> Verb method status ctypes a) m =
+    ServerT (Verb method status ctypes (Envelope '[] a)) m
+
+  route
+    :: Proxy (NoThrow :> Verb method status ctypes a)
+    -> Context context
+    -> Delayed env (ServerT (Verb method status ctypes (Envelope '[] a)) Handler)
+    -> Router env
+  route _ = route (Proxy :: Proxy (Verb method status ctypes (Envelope '[] a)))
+
 -- | When @'Throwing' es@ comes before ':<|>', push @'Throwing' es@ into each
 -- branch of the API.
 instance HasServer ((Throwing es :> api1) :<|> (Throwing es :> api2)) context =>
@@ -81,6 +96,21 @@ instance HasServer ((Throwing es :> api1) :<|> (Throwing es :> api2)) context =>
     -> Delayed env (ServerT ((Throwing es :> api1) :<|> (Throwing es :> api2)) Handler)
     -> Router env
   route _ = route (Proxy :: Proxy ((Throwing es :> api1) :<|> (Throwing es :> api2)))
+
+-- | When 'NoThrow' comes before ':<|>', push 'NoThrow' into each
+-- branch of the API.
+instance HasServer ((NoThrow :> api1) :<|> (NoThrow :> api2)) context =>
+    HasServer (NoThrow :> (api1 :<|> api2)) context where
+
+  type ServerT (NoThrow :> (api1 :<|> api2)) m =
+    ServerT ((NoThrow :> api1) :<|> (NoThrow :> api2)) m
+
+  route
+    :: Proxy (NoThrow :> (api1 :<|> api2))
+    -> Context context
+    -> Delayed env (ServerT ((NoThrow :> api1) :<|> (NoThrow :> api2)) Handler)
+    -> Router env
+  route _ = route (Proxy :: Proxy ((NoThrow :> api1) :<|> (NoThrow :> api2)))
 
 -- | When a @'Throws' e@ comes immediately after a @'Throwing' es@, 'Snoc' the
 -- @e@ onto the @es@. Otherwise, if @'Throws' e@ comes before any other
@@ -97,3 +127,18 @@ instance HasServer (ThrowingNonterminal (Throwing es :> api :> apis)) context =>
     -> Delayed env (ServerT (ThrowingNonterminal (Throwing es :> api :> apis)) Handler)
     -> Router env
   route _ = route (Proxy :: Proxy (ThrowingNonterminal (Throwing es :> api :> apis)))
+
+-- | When 'NoThrow' comes before any combinator, push it down so it is closer
+-- to the 'Verb'.
+instance HasServer (api :> NoThrow :> apis) context =>
+    HasServer (NoThrow :> api :> apis) context where
+
+  type ServerT (NoThrow :> api :> apis) m =
+    ServerT (api :> NoThrow :> apis) m
+
+  route
+    :: Proxy (NoThrow :> api :> apis)
+    -> Context context
+    -> Delayed env (ServerT (api :> NoThrow :> apis) Handler)
+    -> Router env
+  route _ = route (Proxy :: Proxy (api :> NoThrow :> apis))
