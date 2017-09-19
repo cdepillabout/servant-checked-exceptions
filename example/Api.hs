@@ -16,7 +16,7 @@ import Servant.API (Capture, JSON, Post, (:>), (:<|>))
 import Text.Read (readMaybe)
 import Web.HttpApiData (FromHttpApiData, ToHttpApiData)
 
-import Servant.Checked.Exceptions (Throws)
+import Servant.Checked.Exceptions (NoThrow, Throws)
 
 ---------
 -- API --
@@ -25,8 +25,9 @@ import Servant.Checked.Exceptions (Throws)
 -- | This is our main 'Api' type.  We will create a server, a client, and
 -- documentation for this api.
 --
--- This api is composed of two routes, 'ApiStrictSearch' and 'ApiLaxSearch'.
-type Api = ApiStrictSearch :<|> ApiLaxSearch
+-- This api is composed of three routes, 'ApiStrictSearch', 'ApiLaxSearch', and
+-- 'ApiNoErrSearch'.
+type Api = ApiStrictSearch :<|> ApiLaxSearch :<|> ApiNoErrSearch
 
 -- | This is a strict search api.  You pass it a @\"query\"@, and it returns a
 -- 'SearchResponse'.  It potentially returns a 'BadSearchTermErr' if your query
@@ -48,6 +49,14 @@ type ApiLaxSearch =
   "lax-search" :>
   Capture "query" SearchQuery :>
   Throws BadSearchTermErr :>
+  Post '[JSON] SearchResponse
+
+-- | This is similar to 'ApiLaxSearch', but it doesn't force the query to use
+-- correct terms.  It does not return an error.
+type ApiNoErrSearch =
+  "no-err-search" :>
+  Capture "query" SearchQuery :>
+  NoThrow :>
   Post '[JSON] SearchResponse
 
 ------------------------------

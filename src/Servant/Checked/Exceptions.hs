@@ -104,6 +104,7 @@ module Servant.Checked.Exceptions
   , pureErrEnvelope
   -- *** 'Envelope' destructors
   , envelope
+  , emptyEnvelope
   , fromEnvelope
   , fromEnvelopeOr
   , fromEnvelopeM

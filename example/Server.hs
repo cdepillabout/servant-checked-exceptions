@@ -33,7 +33,7 @@ import Api
 -- | This is our server root for the 'ServerT' for 'Api'.  We only have two
 -- handlers, 'postStrictSearch' and 'postLaxSearch'.
 serverRoot :: ServerT Api Handler
-serverRoot = postStrictSearch :<|> postLaxSearch
+serverRoot = postStrictSearch :<|> postLaxSearch :<|> postNoErrSearch
 
 -- | This is the handler for 'Api.ApiStrictSearch'.
 --
@@ -59,7 +59,7 @@ postStrictSearch (SearchQuery query)
 
 -- | This is the handler for 'Api.ApiLaxSearch'.
 --
--- This is similar to 'postStrictSearch', but it doesn't require correctly
+-- This is similar to 'postStrictSearch', but it doesn't require correct
 -- capitalization.
 postLaxSearch
   :: SearchQuery
@@ -67,6 +67,13 @@ postLaxSearch
 postLaxSearch (SearchQuery query)
   | fmap toLower query == "hello" = pureSuccEnvelope "good"
   | otherwise = pureErrEnvelope BadSearchTermErr
+
+-- | This is the handler for 'Api.ApiNoErrSearch'.
+--
+-- This is similar to 'postLaxSearch', but it doesn't require a correct search
+-- term.
+postNoErrSearch :: SearchQuery -> Handler (Envelope '[] SearchResponse)
+postNoErrSearch (SearchQuery _) = pureSuccEnvelope "good"
 
 -- | Create a WAI 'Application'.
 app :: Application
