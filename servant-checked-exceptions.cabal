@@ -12,6 +12,7 @@ category:            Text
 build-type:          Simple
 extra-source-files:  CHANGELOG.md
                    , README.md
+                   , stack.yaml
 cabal-version:       >=1.10
 
 flag buildexample
