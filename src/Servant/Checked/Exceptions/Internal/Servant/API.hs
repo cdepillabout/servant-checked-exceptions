@@ -35,6 +35,20 @@ data Throws (e :: *)
 -- | 'NoThrow' is used to indicate that an API will not throw an error, but
 -- that it will still return a response wrapped in a
 -- 'Servant.Checked.Exceptions.Internal.Envelope.Envelope'.
+--
+-- ==== __Examples__
+--
+-- Create an API using 'NoThrow':
+--
+-- >>> import Servant.API (Get, JSON, (:>))
+-- >>> type API = NoThrow :> Get '[JSON] Int
+--
+-- A servant-server handler for this type would look like the following:
+--
+-- @
+--   apiHandler :: 'Servant.Handler' ('Servant.Checked.Exceptions.Internal.Envelope.Envelope' \'[] Int)
+--   apiHandler = 'Servant.Checked.Exceptions.Internal.Envelope.pureSuccEnvelope' 3
+-- @
 data NoThrow
 
 -- | This is used internally and should not be used by end-users.
