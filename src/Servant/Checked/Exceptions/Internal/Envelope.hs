@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveFoldable #-}
 {-# LANGUAGE DeriveFunctor #-}
@@ -41,6 +42,7 @@ module Servant.Checked.Exceptions.Internal.Envelope
   , pureErrEnvelope
   -- ** Envelope Destructors
   , envelope
+  , emptyEnvelope
   , fromEnvelope
   , fromEnvelopeOr
   , fromEnvelopeM
@@ -74,7 +76,7 @@ import Servant.Checked.Exceptions.Internal.Prism
        (Iso, Prism, Prism', iso, preview, prism)
 import Servant.Checked.Exceptions.Internal.Product (ToOpenProduct)
 import Servant.Checked.Exceptions.Internal.Union
-       (IsMember, OpenUnion, catchesOpenUnion, openUnionLift,
+       (IsMember, OpenUnion, absurdUnion, catchesOpenUnion, openUnionLift,
         openUnionPrism)
 import Servant.Checked.Exceptions.Internal.Util (ReturnX)
 
@@ -152,6 +154,17 @@ pureSuccEnvelope = pure . toSuccEnvelope
 envelope :: (OpenUnion es -> c) -> (a -> c) -> Envelope es a -> c
 envelope f _ (ErrEnvelope es) = f es
 envelope _ f (SuccEnvelope a) = f a
+
+-- | Unwrap an 'Envelope' that cannot contain an error.
+--
+-- ==== __Examples__
+--
+-- >>> let env = toSuccEnvelope "hello" :: Envelope '[] String
+-- >>> emptyEnvelope env
+-- "hello"
+emptyEnvelope :: Envelope '[] a -> a
+emptyEnvelope (SuccEnvelope a) = a
+emptyEnvelope (ErrEnvelope es) = absurdUnion es
 
 -- | Just like 'Data.Either.fromEither' but for 'Envelope'.
 --

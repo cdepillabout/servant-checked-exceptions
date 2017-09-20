@@ -92,6 +92,8 @@ module Servant.Checked.Exceptions
   (
   -- * 'Throws' API parameter
     Throws
+  -- * 'NoThrow' API parameter
+  , NoThrow
   -- * 'Envelope' response wrapper
   , Envelope(..)
   -- ** 'Envelope' helper functions
@@ -102,6 +104,7 @@ module Servant.Checked.Exceptions
   , pureErrEnvelope
   -- *** 'Envelope' destructors
   , envelope
+  , emptyEnvelope
   , fromEnvelope
   , fromEnvelopeOr
   , fromEnvelopeM
