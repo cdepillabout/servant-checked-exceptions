@@ -64,6 +64,10 @@ matrix:
     compiler: ": #stack 8.0.2 (lts-8)"
     addons: {apt: {packages: [ghc-8.0.2,libgmp-dev], sources: [hvr-ghc]}}
 
+  - env: BUILD=stack ARGS="--resolver lts-9"
+    compiler: ": #stack 8.0.2 (lts-9)"
+    addons: {apt: {packages: [ghc-8.0.2,libgmp-dev], sources: [hvr-ghc]}}
+
   # Nightly builds are allowed to fail
   - env: BUILD=stack ARGS="--resolver nightly"
     compiler: ": #stack nightly"
@@ -80,6 +84,10 @@ matrix:
 
   - env: BUILD=stack ARGS="--resolver lts-8"
     compiler: ": #stack 8.0.2 (lts-8) osx"
+    os: osx
+
+  - env: BUILD=stack ARGS="--resolver lts-9"
+    compiler: ": #stack 8.0.2 (lts-9) osx"
     os: osx
 
   - env: BUILD=stack ARGS="--resolver nightly"
