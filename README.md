@@ -131,7 +131,7 @@ If you try to send a query that is not `hello`, the server will return an error:
 $ curl \
     --request POST \
     --header 'Accept: application/json' \
-    'http://localhost:8201/lax-search/hello'
+    'http://localhost:8201/lax-search/goodbye'
 {"err":"BadSearchTermErr"}
 ```
 
