@@ -37,6 +37,8 @@ import Servant.Checked.Exceptions.Internal.Servant.API
        (NoThrow, Throws, Throwing, ThrowingNonterminal)
 
 -- TODO: Make sure to also account for when headers are being used.
+-- This might be hard to do:
+-- https://github.com/cdepillabout/servant-checked-exceptions/issues/4
 
 -- | Change a 'Throws' into 'Throwing'.
 instance (HasServer (Throwing '[e] :> api) context) =>
