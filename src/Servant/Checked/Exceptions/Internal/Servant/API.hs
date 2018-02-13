@@ -1,4 +1,6 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
@@ -18,6 +20,11 @@ This module defines the 'Throws' and 'Throwing' types.
 
 module Servant.Checked.Exceptions.Internal.Servant.API where
 
+import Data.Typeable (Typeable)
+import GHC.Exts (Constraint)
+import GHC.Generics (Generic)
+import GHC.TypeLits (Nat)
+import Network.HTTP.Types (Status, StdMethod(DELETE, GET, PATCH, POST, PUT))
 import Servant.API ((:>))
 
 import Servant.Checked.Exceptions.Internal.Util (Snoc)
@@ -62,3 +69,52 @@ type family ThrowingNonterminal api where
     Throwing (Snoc es e) :> api
   ThrowingNonterminal (Throwing es :> c :> api) =
     c :> Throwing es :> api
+
+data VerbWithErr
+    (method :: k1)
+    (successStatusCode :: Nat)
+    (contentTypes :: [*])
+    (es :: [*])
+    a
+  deriving (Generic, Typeable)
+
+type GetWithErr    = VerbWithErr 'GET    200
+type PostWithErr   = VerbWithErr 'POST   200
+type PutWithErr    = VerbWithErr 'PUT    200
+type DeleteWithErr = VerbWithErr 'DELETE 200
+type PatchWithErr  = VerbWithErr 'PATCH  200
+
+type PostCreatedWithErr = VerbWithErr 'POST 201
+
+type GetAcceptedWithErr    = VerbWithErr 'GET 202
+type PostAcceptedWithErr   = VerbWithErr 'POST 202
+type DeleteAcceptedWithErr = VerbWithErr 'DELETE 202
+type PatchAcceptedWithErr  = VerbWithErr 'PATCH 202
+type PutAcceptedWithErr    = VerbWithErr 'PUT 202
+
+type GetNonAuthoritativeWithErr    = VerbWithErr 'GET 203
+type PostNonAuthoritativeWithErr   = VerbWithErr 'POST 203
+type DeleteNonAuthoritativeWithErr = VerbWithErr 'DELETE 203
+type PatchNonAuthoritativeWithErr  = VerbWithErr 'PATCH 203
+type PutNonAuthoritativeWithErr    = VerbWithErr 'PUT 203
+
+type GetNoContentWithErr    = VerbWithErr 'GET 204
+type PostNoContentWithErr   = VerbWithErr 'POST 204
+type DeleteNoContentWithErr = VerbWithErr 'DELETE 204
+type PatchNoContentWithErr  = VerbWithErr 'PATCH 204
+type PutNoContentWithErr    = VerbWithErr 'PUT 204
+
+type GetResetContentWithErr    = VerbWithErr 'GET 205
+type PostResetContentWithErr   = VerbWithErr 'POST 205
+type DeleteResetContentWithErr = VerbWithErr 'DELETE 205
+type PatchResetContentWithErr  = VerbWithErr 'PATCH 205
+type PutResetContentWithErr    = VerbWithErr 'PUT 205
+
+type GetPartialContentWithErr = VerbWithErr 'GET 206
+
+class ErrStatus e where
+  toErrStatus :: e -> Status
+
+type family AllErrStatus (es :: [k]) :: Constraint where
+  AllErrStatus '[] = ()
+  AllErrStatus (a ': as) = (ErrStatus a, AllErrStatus as)

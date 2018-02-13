@@ -1,5 +1,5 @@
 name:                servant-checked-exceptions
-version:             0.4.1.0
+version:             1.0.0.0
 synopsis:            Checked exceptions for Servant APIs.
 description:         Please see <https://github.com/cdepillabout/servant-checked-exceptions#readme README.md>.
 homepage:            https://github.com/cdepillabout/servant-checked-exceptions
@@ -7,7 +7,7 @@ license:             BSD3
 license-file:        LICENSE
 author:              Dennis Gosnell
 maintainer:          cdep.illabout@gmail.com
-copyright:           2017 Dennis Gosnell
+copyright:           2017-2018 Dennis Gosnell
 category:            Text
 build-type:          Simple
 extra-source-files:  CHANGELOG.md
@@ -38,13 +38,15 @@ library
                      , bytestring
                      , deepseq
                      , http-media
+                     , http-types
                      , profunctors
                      , tagged
-                     , servant >= 0.9
-                     , servant-client >= 0.9
-                     , servant-docs >= 0.9
-                     , servant-server >= 0.9
+                     , servant >= 0.9 && < 0.12
+                     , servant-client >= 0.9 && < 0.12
+                     , servant-docs >= 0.9 && < 0.12
+                     , servant-server >= 0.9 && < 0.12
                      , text
+                     , wai
   default-language:    Haskell2010
   ghc-options:         -Wall -fwarn-incomplete-uni-patterns -fwarn-incomplete-record-updates -fwarn-monomorphism-restriction
   other-extensions:    QuasiQuotes
@@ -58,6 +60,7 @@ executable servant-checked-exceptions-example-client
                      , aeson
                      , http-api-data
                      , http-client
+                     , http-types
                      , optparse-applicative
                      , servant
                      , servant-checked-exceptions
@@ -78,6 +81,7 @@ executable servant-checked-exceptions-example-docs
   build-depends:       base
                      , aeson
                      , http-api-data
+                     , http-types
                      , servant
                      , servant-checked-exceptions
                      , servant-docs
@@ -97,6 +101,7 @@ executable servant-checked-exceptions-example-server
   build-depends:       base
                      , aeson
                      , http-api-data
+                     , http-types
                      , natural-transformation
                      , servant
                      , servant-checked-exceptions
@@ -130,6 +135,7 @@ test-suite servant-checked-exceptions-test
   build-depends:       base
                      , bytestring
                      , hspec-wai
+                     , http-types
                      , tasty
                      , tasty-hspec
                      , tasty-hunit

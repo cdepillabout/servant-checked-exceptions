@@ -22,13 +22,16 @@ import Network.Wai (Application)
 import Network.Wai.Handler.Warp (run)
 import Servant (Handler, (:<|>)((:<|>)), ServerT, serve)
 
-import Servant.Checked.Exceptions
-       (Envelope, pureErrEnvelope, pureSuccEnvelope)
+import Servant.Checked.Exceptions (Envelope, pureErrEnvelope, pureSuccEnvelope)
 
 import Api
-       (Api, BadSearchTermErr(BadSearchTermErr),
-        IncorrectCapitalization(IncorrectCapitalization),
-        SearchQuery(SearchQuery), SearchResponse, port)
+  ( Api
+  , BadSearchTermErr(BadSearchTermErr)
+  , IncorrectCapitalization(IncorrectCapitalization)
+  , SearchQuery(SearchQuery)
+  , SearchResponse
+  , port
+  )
 
 -- | This is our server root for the 'ServerT' for 'Api'.  We only have two
 -- handlers, 'postStrictSearch' and 'postLaxSearch'.

@@ -90,10 +90,51 @@ shows how to compile and run the examples.
 
 module Servant.Checked.Exceptions
   (
-  -- * 'Throws' API parameter
+  -- * Servant Types
+  -- ** 'Throws' API parameter
     Throws
-  -- * 'NoThrow' API parameter
+  -- ** 'NoThrow' API parameter
   , NoThrow
+  -- ** HTTP Error Status Code
+  , ErrStatus(toErrStatus)
+  , Status
+  -- ** Verbs
+  , VerbWithErr
+  -- *** Specialized Verbs
+  -- **** HTTP 200
+  , GetWithErr
+  , PostWithErr
+  , PutWithErr
+  , DeleteWithErr
+  , PatchWithErr
+  -- **** HTTP 201
+  , PostCreatedWithErr
+  -- **** HTTP 202
+  , GetAcceptedWithErr
+  , PostAcceptedWithErr
+  , DeleteAcceptedWithErr
+  , PatchAcceptedWithErr
+  , PutAcceptedWithErr
+  -- **** HTTP 203
+  , GetNonAuthoritativeWithErr
+  , PostNonAuthoritativeWithErr
+  , DeleteNonAuthoritativeWithErr
+  , PatchNonAuthoritativeWithErr
+  , PutNonAuthoritativeWithErr
+  -- **** HTTP 204
+  , GetNoContentWithErr
+  , PostNoContentWithErr
+  , DeleteNoContentWithErr
+  , PatchNoContentWithErr
+  , PutNoContentWithErr
+  -- **** HTTP 205
+  , GetResetContentWithErr
+  , PostResetContentWithErr
+  , DeleteResetContentWithErr
+  , PatchResetContentWithErr
+  , PutResetContentWithErr
+  -- **** HTTP 206
+  , GetPartialContentWithErr
   -- * 'Envelope' response wrapper
   , Envelope(..)
   -- ** 'Envelope' helper functions
@@ -160,5 +201,7 @@ module Servant.Checked.Exceptions
   , tupleToProduct
   , ReturnX
   ) where
+
+import Network.HTTP.Types (Status)
 
 import Servant.Checked.Exceptions.Internal

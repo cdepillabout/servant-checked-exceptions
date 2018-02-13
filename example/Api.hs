@@ -12,11 +12,13 @@ import Data.Aeson
 import Data.Aeson.Types (Parser)
 import Data.String (IsString)
 import Data.Text (unpack)
+import Network.HTTP.Types (Status, status400, status404)
 import Servant.API (Capture, JSON, Post, (:>), (:<|>))
 import Text.Read (readMaybe)
 import Web.HttpApiData (FromHttpApiData, ToHttpApiData)
 
 import Servant.Checked.Exceptions (NoThrow, Throws)
+import Servant.Checked.Exceptions.Internal.Servant.API (ErrStatus(toErrStatus))
 
 ---------
 -- API --
@@ -107,6 +109,10 @@ instance FromJSON BadSearchTermErr where
   parseJSON = withText "BadSearchTermErr" $
     maybe (fail "could not parse as BadSearchTermErr") pure . readMaybe . unpack
 
+instance ErrStatus BadSearchTermErr where
+  toErrStatus :: BadSearchTermErr -> Status
+  toErrStatus _ = status404
+
 -- | This error is returned when the search query is @\"hello\"@, but it is not
 -- capitalized correctly.  For example, the search query @\"hello\"@ will
 -- return an 'IncorrectCapitialization' error.  However, the search query
@@ -121,6 +127,10 @@ instance FromJSON IncorrectCapitalization where
   parseJSON :: Value -> Parser IncorrectCapitalization
   parseJSON = withText "IncorrectCapitalization" $
     maybe (fail "could not parse as IncorrectCapitalization") pure . readMaybe . unpack
+
+instance ErrStatus IncorrectCapitalization where
+  toErrStatus :: IncorrectCapitalization -> Status
+  toErrStatus _ = status400
 
 ----------
 -- Port --
