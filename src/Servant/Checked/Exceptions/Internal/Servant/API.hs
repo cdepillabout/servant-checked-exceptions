@@ -24,9 +24,8 @@ import Data.Typeable (Typeable)
 import GHC.Exts (Constraint)
 import GHC.Generics (Generic)
 import GHC.TypeLits (Nat)
-import Network.HTTP.Types -- (Status, StdMethod(..))
+import Network.HTTP.Types (Status, StdMethod(DELETE, GET, PATCH, POST, PUT))
 import Servant.API ((:>))
-import Servant.API.Verbs
 
 import Servant.Checked.Exceptions.Internal.Util (Snoc)
 
@@ -71,7 +70,12 @@ type family ThrowingNonterminal api where
   ThrowingNonterminal (Throwing es :> c :> api) =
     c :> Throwing es :> api
 
-data VerbWithErr (method :: k1) (successStatusCode :: Nat) (contentTypes :: [*]) (es :: [*]) a
+data VerbWithErr
+    (method :: k1)
+    (successStatusCode :: Nat)
+    (contentTypes :: [*])
+    (es :: [*])
+    a
   deriving (Generic, Typeable)
 
 type GetWithErr    = VerbWithErr 'GET    200

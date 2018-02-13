@@ -93,33 +93,38 @@ instance (HasServer (Throwing '[e] :> api) context) =>
 
 -- | When @'Throwing' es@ comes before a 'Verb', change it into the same 'Verb'
 -- but returning an @'Envelope' es@.
-instance (HasServer (Verb method status ctypes (Envelope es a)) context) =>
+instance (HasServer (VerbWithErr method status ctypes es a) context) =>
     HasServer (Throwing es :> Verb method status ctypes a) context where
 
   type ServerT (Throwing es :> Verb method status ctypes a) m =
-    ServerT (Verb method status ctypes (Envelope es a)) m
+    ServerT (VerbWithErr method status ctypes es a) m
 
   route
     :: Proxy (Throwing es :> Verb method status ctypes a)
     -> Context context
-    -> Delayed env (ServerT (Verb method status ctypes (Envelope es a)) Handler)
+    -> Delayed env
+         (ServerT (VerbWithErr method status ctypes es a) Handler)
     -> Router env
-  route _ = route (Proxy :: Proxy (Verb method status ctypes (Envelope es a)))
+  route _ =
+    route
+      (Proxy :: Proxy (VerbWithErr method status ctypes es a))
 
 -- | When 'NoThrow' comes before a 'Verb', change it into the same 'Verb'
 -- but returning an @'Envelope' \'[]@.
-instance (HasServer (Verb method status ctypes (Envelope '[] a)) context) =>
+instance
+    ( HasServer (VerbWithErr method status ctypes '[] a) context
+    ) =>
     HasServer (NoThrow :> Verb method status ctypes a) context where
 
   type ServerT (NoThrow :> Verb method status ctypes a) m =
-    ServerT (Verb method status ctypes (Envelope '[] a)) m
+    ServerT (VerbWithErr method status ctypes '[] a) m
 
   route
     :: Proxy (NoThrow :> Verb method status ctypes a)
     -> Context context
-    -> Delayed env (ServerT (Verb method status ctypes (Envelope '[] a)) Handler)
+    -> Delayed env (ServerT (VerbWithErr method status ctypes '[] a) Handler)
     -> Router env
-  route _ = route (Proxy :: Proxy (Verb method status ctypes (Envelope '[] a)))
+  route _ = route (Proxy :: Proxy (VerbWithErr method status ctypes '[] a))
 
 -- | When @'Throwing' es@ comes before ':<|>', push @'Throwing' es@ into each
 -- branch of the API.
@@ -182,7 +187,9 @@ instance HasServer (api :> NoThrow :> apis) context =>
     -> Router env
   route _ = route (Proxy :: Proxy (api :> NoThrow :> apis))
 
-
+---------------------
+-- Verb With Error --
+---------------------
 
 instance
     {-# OVERLAPPABLE #-}
@@ -193,20 +200,26 @@ instance
     ) =>
     HasServer (VerbWithErr method successStatus ctypes es a) context where
 
-  type ServerT (VerbWithErr method successStatus ctypes es a) m = m (Envelope es a)
+  type ServerT (VerbWithErr method successStatus ctypes es a) m =
+    m (Envelope es a)
 
   route
     :: Proxy (VerbWithErr method successStatus ctypes es a)
     -> Context context
     -> Delayed env (Handler (Envelope es a))
-    -> Router' env (Request -> (RouteResult Response -> IO ResponseReceived) -> IO ResponseReceived)
+    -> Router' env
+         ( Request ->
+           (RouteResult Response -> IO ResponseReceived) ->
+           IO ResponseReceived
+         )
   route Proxy _ = methodRouter method successStatus (Proxy :: Proxy ctypes)
     where
       method :: Method
       method = reflectMethod (Proxy :: Proxy method)
 
       successStatus :: Status
-      successStatus = toEnum . fromInteger $ natVal (Proxy :: Proxy successStatus)
+      successStatus =
+        toEnum . fromInteger $ natVal (Proxy :: Proxy successStatus)
 
 methodRouter ::
      forall ctypes a es env.
@@ -215,10 +228,18 @@ methodRouter ::
   -> Status
   -> Proxy ctypes
   -> Delayed env (Handler (Envelope es a))
-  -> Router' env (Request -> (RouteResult Response -> IO ResponseReceived) -> IO ResponseReceived)
+  -> Router' env
+       ( Request ->
+         (RouteResult Response -> IO ResponseReceived)->
+         IO ResponseReceived
+       )
 methodRouter method successStatus proxy action = leafRouter route'
   where
-    route' :: env -> Request -> (RouteResult Response -> IO ResponseReceived) -> IO ResponseReceived
+    route'
+      :: env
+      -> Request
+      -> (RouteResult Response -> IO ResponseReceived)
+      -> IO ResponseReceived
     route' env request respond = do
       let accH = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
       let theAction =
@@ -234,10 +255,12 @@ methodRouter method successStatus proxy action = leafRouter route'
       processMethodRouter handleA status method Nothing request
 
 allowedMethod :: Method -> Request -> Bool
-allowedMethod method request = allowedMethodHead method request || requestMethod request == method
+allowedMethod method request =
+  allowedMethodHead method request || requestMethod request == method
 
 allowedMethodHead :: Method -> Request -> Bool
-allowedMethodHead method request = method == methodGet && requestMethod request == methodHead
+allowedMethodHead method request =
+  method == methodGet && requestMethod request == methodHead
 
 methodCheck :: Method -> Request -> DelayedIO ()
 methodCheck method request
@@ -260,7 +283,8 @@ processMethodRouter
   -> Maybe [(HeaderName, ByteString)]
   -> Request -> RouteResult Response
 processMethodRouter handleA status method headers request = case handleA of
-  Nothing -> FailFatal err406 -- this should not happen (checked before), so we make it fatal if it does
+  Nothing -> FailFatal err406 -- this should not happen (checked before),
+                              -- so we make it fatal if it does
   Just (contentT, body) -> Route $ responseLBS status hdrs bdy
     where
       bdy = if allowedMethodHead method request then "" else body
