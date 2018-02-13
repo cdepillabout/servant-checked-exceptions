@@ -18,7 +18,7 @@ import Text.Read (readMaybe)
 import Web.HttpApiData (FromHttpApiData, ToHttpApiData)
 
 import Servant.Checked.Exceptions (NoThrow, Throws)
-import Servant.Checked.Exceptions.Internal.Servant.API (ErrStatus(toErrStatus), GetWithEx)
+import Servant.Checked.Exceptions.Internal.Servant.API (ErrStatus(toErrStatus))
 
 ---------
 -- API --
@@ -29,7 +29,7 @@ import Servant.Checked.Exceptions.Internal.Servant.API (ErrStatus(toErrStatus), 
 --
 -- This api is composed of three routes, 'ApiStrictSearch', 'ApiLaxSearch', and
 -- 'ApiNoErrSearch'.
-type Api = ApiStrictSearch :<|> ApiLaxSearch :<|> ApiNoErrSearch :<|> ApiTestTest
+type Api = ApiStrictSearch :<|> ApiLaxSearch :<|> ApiNoErrSearch
 
 -- | This is a strict search api.  You pass it a @\"query\"@, and it returns a
 -- 'SearchResponse'.  It potentially returns a 'BadSearchTermErr' if your query
@@ -60,11 +60,6 @@ type ApiNoErrSearch =
   Capture "query" SearchQuery :>
   NoThrow :>
   Post '[JSON] SearchResponse
-
-type ApiTestTest =
-  "testtesttest" :>
-  Capture "query" SearchQuery :>
-  GetWithEx '[JSON] '[BadSearchTermErr, IncorrectCapitalization] SearchResponse
 
 ------------------------------
 -- Parameters and Responses --

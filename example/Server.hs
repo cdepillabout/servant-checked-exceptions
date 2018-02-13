@@ -24,7 +24,7 @@ import Servant (Handler, (:<|>)((:<|>)), ServerT, serve)
 
 import Servant.Checked.Exceptions
        (Envelope, pureErrEnvelope, pureSuccEnvelope)
-import Servant.Checked.Exceptions.Internal.Servant.API (ErrStatus(toErrStatus), GetWithEx)
+import Servant.Checked.Exceptions.Internal.Servant.API (ErrStatus(toErrStatus))
 
 import Api
        (Api, BadSearchTermErr(BadSearchTermErr),
@@ -34,7 +34,7 @@ import Api
 -- | This is our server root for the 'ServerT' for 'Api'.  We only have two
 -- handlers, 'postStrictSearch' and 'postLaxSearch'.
 serverRoot :: ServerT Api Handler
-serverRoot = postStrictSearch :<|> postLaxSearch :<|> postNoErrSearch :<|> testtesttest
+serverRoot = postStrictSearch :<|> postLaxSearch :<|> postNoErrSearch
 
 -- | This is the handler for 'Api.ApiStrictSearch'.
 --
@@ -75,9 +75,6 @@ postLaxSearch (SearchQuery query)
 -- term.
 postNoErrSearch :: SearchQuery -> Handler (Envelope '[] SearchResponse)
 postNoErrSearch (SearchQuery _) = pureSuccEnvelope "good"
-
-testtesttest :: SearchQuery -> Handler (Envelope '[BadSearchTermErr, IncorrectCapitalization] SearchResponse)
-testtesttest (SearchQuery _) = pureErrEnvelope IncorrectCapitalization
 
 -- | Create a WAI 'Application'.
 app :: Application
