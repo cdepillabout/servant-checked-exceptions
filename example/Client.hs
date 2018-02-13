@@ -52,7 +52,7 @@ laxSearch
 noErrSearch
   :: SearchQuery
   -> ClientM (Envelope '[] SearchResponse)
-strictSearch :<|> laxSearch :<|> noErrSearch :<|> _ = client (Proxy :: Proxy Api)
+strictSearch :<|> laxSearch :<|> noErrSearch = client (Proxy :: Proxy Api)
 
 --------------------------------------
 -- Command-line options and parsers --

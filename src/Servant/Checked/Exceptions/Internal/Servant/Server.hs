@@ -32,7 +32,6 @@ import qualified Data.ByteString.Lazy as LBS
 import Data.Functor.Identity
 import Data.Maybe
 import Data.Proxy (Proxy(Proxy))
-import GHC.Exts (Constraint)
 import GHC.TypeLits (KnownNat, natVal)
 import Network.HTTP.Types
 import Network.Wai
@@ -54,15 +53,8 @@ import Servant
   , reflectMethod
   )
 
-import Servant.Checked.Exceptions.Internal.Envelope
-  ( Envelope(ErrEnvelope, SuccEnvelope)
-  , envelope
-  )
-import Servant.Checked.Exceptions.Internal.Union
-  ( OpenUnion
-  , Union(That, This)
-  , openUnion
-  )
+import Servant.Checked.Exceptions.Internal.Envelope (Envelope, envelope)
+import Servant.Checked.Exceptions.Internal.Union (OpenUnion, Union(That, This))
 import Servant.Checked.Exceptions.Internal.Servant.API
   ( AllErrStatus
   , ErrStatus(toErrStatus)

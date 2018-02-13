@@ -69,10 +69,10 @@ executable servant-checked-exceptions-example-client
   default-language:    Haskell2010
   ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
 
-  -- if flag(buildexample)
-  --   buildable:         True
-  -- else
-  buildable:         False
+  if flag(buildexample)
+    buildable:         True
+  else
+    buildable:         False
 
 executable servant-checked-exceptions-example-docs
   main-is:             Docs.hs
@@ -89,10 +89,10 @@ executable servant-checked-exceptions-example-docs
   default-language:    Haskell2010
   ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
 
-  -- if flag(buildexample)
-  --   buildable:         True
-  -- else
-  buildable:         False
+  if flag(buildexample)
+    buildable:         True
+  else
+    buildable:         False
 
 executable servant-checked-exceptions-example-server
   main-is:             Server.hs
@@ -135,6 +135,7 @@ test-suite servant-checked-exceptions-test
   build-depends:       base
                      , bytestring
                      , hspec-wai
+                     , http-types
                      , tasty
                      , tasty-hspec
                      , tasty-hunit

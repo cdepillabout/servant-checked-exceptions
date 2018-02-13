@@ -1,7 +1,9 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Main where
 
@@ -9,15 +11,37 @@ import Control.Exception (Exception, SomeException, catch)
 import Data.Proxy (Proxy(Proxy))
 import Data.Type.Equality ((:~:)(Refl))
 import Data.Typeable (Typeable)
+import Network.HTTP.Types (status404)
 import Network.Wai (Application)
-import Servant ((:<|>)((:<|>)), (:>), Capture, Get, Handler, JSON, ServerT, serve)
-import Test.Hspec.Wai (get, shouldRespondWith, with)
+import Servant
+  ( (:<|>)((:<|>))
+  , (:>)
+  , Capture
+  , Get
+  , Handler
+  , JSON
+  , ServerT
+  , serve
+  )
+import Test.Hspec.Wai
+  ( ResponseMatcher(matchStatus)
+  , get
+  , shouldRespondWith
+  , with
+  )
 import Test.Tasty (TestTree, defaultMain, testGroup)
 import Test.Tasty.Hspec (describe, it, testSpec)
 import Test.Tasty.HUnit ((@?=), assertFailure, testCase)
 
 import Servant.Checked.Exceptions
-       (Envelope, NoThrow, Throws, pureErrEnvelope, pureSuccEnvelope)
+  ( Envelope
+  , ErrStatus(toErrStatus)
+  , NoThrow
+  , Status
+  , Throws
+  , pureErrEnvelope
+  , pureSuccEnvelope
+  )
 
 main :: IO ()
 main = do
@@ -130,6 +154,10 @@ hasServerInstanceTests =
 -- Server tests --
 ------------------
 
+instance ErrStatus Int where
+  toErrStatus :: Int -> Status
+  toErrStatus _ = status404
+
 type TestThrows = Capture "foobar" Double :> Throws Int :> Get '[JSON] String
 
 type TestNoThrow = Capture "baz" Integer :> NoThrow :> Get '[JSON] String
@@ -157,7 +185,7 @@ serverTestsIO =
     with (pure app) $ do
       describe "Throws" $ do
         it "handler can return error envelope" $
-          get "/-5" `shouldRespondWith` "{\"err\":0}"
+          get "/-5" `shouldRespondWith` "{\"err\":0}" { matchStatus = 404 }
         it "handler can return success envelope" $
           get "/10" `shouldRespondWith` "{\"data\":\"success\"}"
       describe "NoThrow" $ do
