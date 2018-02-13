@@ -41,10 +41,10 @@ library
                      , http-types
                      , profunctors
                      , tagged
-                     , servant >= 0.9
-                     , servant-client >= 0.9
-                     , servant-docs >= 0.9
-                     , servant-server >= 0.9
+                     , servant >= 0.9 && < 0.12
+                     , servant-client >= 0.9 && < 0.12
+                     , servant-docs >= 0.9 && < 0.12
+                     , servant-server >= 0.9 && < 0.12
                      , text
                      , wai
   default-language:    Haskell2010
