@@ -1,4 +1,6 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
@@ -18,6 +20,10 @@ This module defines the 'Throws' and 'Throwing' types.
 
 module Servant.Checked.Exceptions.Internal.Servant.API where
 
+import Data.Typeable (Typeable)
+import GHC.Exts (Constraint)
+import GHC.Generics (Generic)
+import Network.HTTP.Types (Status)
 import Servant.API ((:>))
 
 import Servant.Checked.Exceptions.Internal.Util (Snoc)
@@ -62,3 +68,13 @@ type family ThrowingNonterminal api where
     Throwing (Snoc es e) :> api
   ThrowingNonterminal (Throwing es :> c :> api) =
     c :> Throwing es :> api
+
+data GetWithEx (contentTypes :: [*]) (e :: [*]) a
+  deriving (Generic, Typeable)
+
+class ErrStatus e where
+  toErrStatus :: e -> Status
+
+type family AllErrStatus (es :: [k]) :: Constraint where
+  AllErrStatus '[] = ()
+  AllErrStatus (a ': as) = (ErrStatus a, AllErrStatus as)

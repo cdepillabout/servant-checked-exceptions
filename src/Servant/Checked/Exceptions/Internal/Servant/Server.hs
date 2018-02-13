@@ -3,6 +3,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -26,15 +27,48 @@ This module exports 'HasServer' instances for 'Throws' and 'Throwing'.
 
 module Servant.Checked.Exceptions.Internal.Servant.Server where
 
+import Data.ByteString (ByteString)
+import qualified Data.ByteString.Lazy as LBS
+import Data.Functor.Identity
+import Data.Maybe
 import Data.Proxy (Proxy(Proxy))
-import Servant.Server.Internal.Router (Router)
-import Servant.Server.Internal.RoutingApplication (Delayed)
+import GHC.Exts (Constraint)
+import Network.HTTP.Types
+import Network.Wai
+import Servant.API.ContentTypes -- (AcceptHeader(AcceptHeader), AllCTRender, handleAcceptH)
+import Servant.Server.Internal (ct_wildcard)
+import Servant.Server.Internal.Router (Router, Router', leafRouter)
+import Servant.Server.Internal.RoutingApplication -- (Delayed, DelayedIO, RouteResult(FailFatal, Route), addAcceptCheck, addMethodCheck, runAction)
 import Servant
-       (Context, Handler, HasServer(..), ServerT, Verb, (:>), (:<|>))
+  ( (:<|>)
+  , (:>)
+  , Context
+  , Handler
+  , HasServer(..)
+  , ServerT
+  , Verb
+  , err406
+  , reflectMethod
+  )
 
-import Servant.Checked.Exceptions.Internal.Envelope (Envelope)
+import Servant.Checked.Exceptions.Internal.Envelope
+  ( Envelope(ErrEnvelope, SuccEnvelope)
+  , envelope
+  )
+import Servant.Checked.Exceptions.Internal.Union
+  ( OpenUnion
+  , Union(That, This)
+  , openUnion
+  )
 import Servant.Checked.Exceptions.Internal.Servant.API
-       (NoThrow, Throws, Throwing, ThrowingNonterminal)
+  ( AllErrStatus
+  , ErrStatus(toErrStatus)
+  , GetWithEx
+  , NoThrow
+  , Throwing
+  , ThrowingNonterminal
+  , Throws
+  )
 
 -- TODO: Make sure to also account for when headers are being used.
 -- This might be hard to do:
@@ -144,3 +178,134 @@ instance HasServer (api :> NoThrow :> apis) context =>
     -> Delayed env (ServerT (api :> NoThrow :> apis) Handler)
     -> Router env
   route _ = route (Proxy :: Proxy (api :> NoThrow :> apis))
+
+
+
+
+instance (AllCTRender ctypes (Envelope es a), AllErrStatus es) => HasServer (GetWithEx ctypes es a) context where
+
+  type ServerT (GetWithEx ctypes es a) m = m (Envelope es a)
+
+  route
+    :: Proxy (GetWithEx ctypes es a)
+    -> Context context
+    -- -> Delayed env (ServerT (GetWithEx ctypes es a) Handler)
+    -> Delayed env (Handler (Envelope es a))
+    -- -> Router env
+    -> Router' env (Request -> (RouteResult Response -> IO ResponseReceived) -> IO ResponseReceived)
+  route Proxy _ = methodRouter methodGet (Proxy :: Proxy ctypes)
+    where -- method = reflectMethod (Proxy :: Proxy method)
+          -- status = toEnum . fromInteger $ natVal (Proxy :: Proxy status)
+
+-- type RoutingApplication =
+--      Request -- ^ the request, the field 'pathInfo' may be modified by url routing
+--   -> (RouteResult Response -> IO ResponseReceived) -> IO ResponseReceived
+
+-- type Router env = Router' env RoutingApplication
+
+-- data Router' env a =
+--   StaticRouter  (Map Text (Router' env a)) [env -> a]
+--     -- ^ the map contains routers for subpaths (first path component used
+--     --   for lookup and removed afterwards), the list contains handlers
+--     --   for the empty path, to be tried in order
+--   ...
+
+
+getErrStatus :: AllErrStatus es => OpenUnion es -> Status
+getErrStatus (This (Identity e)) = toErrStatus e
+getErrStatus (That es) = getErrStatus es
+
+methodRouter ::
+     forall ctypes a es env.
+     (AllCTRender ctypes (Envelope es a), AllErrStatus es)
+  => Method
+  -> Proxy ctypes
+  -> Delayed env (Handler (Envelope es a))
+  -> Router' env (Request -> (RouteResult Response -> IO ResponseReceived) -> IO ResponseReceived)
+methodRouter method proxy action = leafRouter route'
+  where
+    route' :: env -> Request -> (RouteResult Response -> IO ResponseReceived) -> IO ResponseReceived
+    route' env request respond = do
+      let accH = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
+      let theAction =
+            action
+              -- `addMethodCheck` (requestMethod request == methodGet)
+              `addAcceptCheck` acceptCheck proxy accH
+      runAction theAction env request respond $ go request accH
+
+    go :: Request -> ByteString -> Envelope es a -> RouteResult Response
+    go request accH envel = do
+      let status = envelope getErrStatus (const status200) envel
+      let handleA = handleAcceptH proxy (AcceptHeader accH) envel
+      processMethodRouter handleA status methodGet Nothing request
+
+acceptCheck :: (AllMime list) => Proxy list -> ByteString -> DelayedIO ()
+acceptCheck proxy accH
+  | canHandleAcceptH proxy (AcceptHeader accH) = return ()
+  | otherwise                                  = delayedFail err406
+
+-- class (AllMime list) => AllCTRender (list :: [*]) a where
+--     -- If the Accept header can be matched, returns (Just) a tuple of the
+--     -- Content-Type and response (serialization of @a@ into the appropriate
+--     -- mimetype).
+--     handleAcceptH :: Proxy list -> AcceptHeader -> a -> Maybe (ByteString, ByteString)
+
+processMethodRouter
+  :: Maybe (LBS.ByteString, LBS.ByteString)
+  -> Status
+  -> Method
+  -> Maybe [(HeaderName, ByteString)]
+  -> Request -> RouteResult Response
+processMethodRouter handleA status method headers request = case handleA of
+  Nothing -> FailFatal err406 -- this should not happen (checked before), so we make it fatal if it does
+  Just (contentT, body) -> Route $ responseLBS status hdrs bdy
+    where
+      bdy = if allowedMethodHead method request then "" else body
+      hdrs = (hContentType, LBS.toStrict contentT) : (fromMaybe [] headers)
+
+allowedMethodHead :: Method -> Request -> Bool
+allowedMethodHead method request = method == methodGet && requestMethod request == methodHead
+
+
+-- instance OVERLAPPABLE_
+--          ( AllCTRender ctypes a, ReflectMethod method, KnownNat status
+--          ) => HasServer (Verb method status ctypes a) context where
+
+--   type ServerT (Verb method status ctypes a) m = m a
+
+--   route Proxy _ = methodRouter method (Proxy :: Proxy ctypes) status
+--     where method = reflectMethod (Proxy :: Proxy method)
+--           status = toEnum . fromInteger $ natVal (Proxy :: Proxy status)
+
+-- allowedMethod :: Method -> Request -> Bool
+-- allowedMethod method request = allowedMethodHead method request || requestMethod request == method
+
+-- processMethodRouter :: Maybe (BL.ByteString, BL.ByteString) -> Status -> Method
+--                     -> Maybe [(HeaderName, B.ByteString)]
+--                     -> Request -> RouteResult Response
+-- processMethodRouter handleA status method headers request = case handleA of
+--   Nothing -> FailFatal err406 -- this should not happen (checked before), so we make it fatal if it does
+--   Just (contentT, body) -> Route $ responseLBS status hdrs bdy
+--     where
+--       bdy = if allowedMethodHead method request then "" else body
+--       hdrs = (hContentType, cs contentT) : (fromMaybe [] headers)
+
+-- methodCheck :: Method -> Request -> DelayedIO ()
+-- methodCheck method request
+--   | allowedMethod method request = return ()
+--   | otherwise                    = delayedFail err405
+
+
+-- methodRouter :: (AllCTRender ctypes a)
+--              => Method -> Proxy ctypes -> Status
+--              -> Delayed env (Handler a)
+--              -> Router env
+-- methodRouter method proxy status action = leafRouter route'
+--   where
+--     route' env request respond =
+--           let accH = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
+--           in runAction (action `addMethodCheck` methodCheck method request
+--                                `addAcceptCheck` acceptCheck proxy accH
+--                        ) env request respond $ \ output -> do
+--                let handleA = handleAcceptH proxy (AcceptHeader accH) output
+--                processMethodRouter handleA status method Nothing request
