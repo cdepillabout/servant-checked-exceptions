@@ -29,7 +29,7 @@ module Servant.Checked.Exceptions.Internal.Servant.Client where
 import Data.Proxy (Proxy(Proxy))
 import Servant.API (Verb, (:>), (:<|>))
 import Servant.Client (HasClient(clientWithRoute, Client))
-import Servant.Common.Req (Req)
+import Servant.Client.Core
 
 import Servant.Checked.Exceptions.Internal.Envelope (Envelope)
 import Servant.Checked.Exceptions.Internal.Servant.API
@@ -38,102 +38,109 @@ import Servant.Checked.Exceptions.Internal.Servant.API
 -- TODO: Make sure to also account for when headers are being used.
 
 -- | Change a 'Throws' into 'Throwing'.
-instance (HasClient (Throwing '[e] :> api)) => HasClient (Throws e :> api) where
-  type Client (Throws e :> api) = Client (Throwing '[e] :> api)
+instance (RunClient m, HasClient m (Throwing '[e] :> api)) => HasClient m (Throws e :> api) where
+  type Client m (Throws e :> api) = Client m (Throwing '[e] :> api)
 
   clientWithRoute
-    :: Proxy (Throws e :> api)
-    -> Req
-    -> Client (Throwing '[e] :> api)
-  clientWithRoute Proxy = clientWithRoute (Proxy :: Proxy (Throwing '[e] :> api))
+    :: Proxy m
+    -> Proxy (Throws e :> api)
+    -> Request
+    -> Client m (Throwing '[e] :> api)
+  clientWithRoute p Proxy = clientWithRoute p (Proxy :: Proxy (Throwing '[e] :> api))
 
 -- | When @'Throwing' es@ comes before a 'Verb', change it into the same 'Verb'
 -- but returning an @'Envelope' es@.
-instance (HasClient (Verb method status ctypes (Envelope es a))) =>
-    HasClient (Throwing es :> Verb method status ctypes a) where
+instance (HasClient m (Verb method status ctypes (Envelope es a))) =>
+    HasClient m (Throwing es :> Verb method status ctypes a) where
 
-  type Client (Throwing es :> Verb method status ctypes a) =
-    Client (Verb method status ctypes (Envelope es a))
+  type Client m (Throwing es :> Verb method status ctypes a) =
+    Client m (Verb method status ctypes (Envelope es a))
 
   clientWithRoute
-    :: Proxy (Throwing es :> Verb method status ctypes a)
-    -> Req
-    -> Client (Verb method status ctypes (Envelope es a))
-  clientWithRoute Proxy =
-    clientWithRoute (Proxy :: Proxy (Verb method status ctypes (Envelope es a)))
+    :: Proxy m
+    -> Proxy (Throwing es :> Verb method status ctypes a)
+    -> Request
+    -> Client m (Verb method status ctypes (Envelope es a))
+  clientWithRoute p Proxy =
+    clientWithRoute p (Proxy :: Proxy (Verb method status ctypes (Envelope es a)))
 
 -- | When 'NoThrow' comes before a 'Verb', change it into the same 'Verb'
 -- but returning an @'Envelope' \'[]@.
-instance (HasClient (Verb method status ctypes (Envelope '[] a))) =>
-    HasClient (NoThrow :> Verb method status ctypes a) where
+instance (RunClient m, HasClient m (Verb method status ctypes (Envelope '[] a))) =>
+    HasClient m (NoThrow :> Verb method status ctypes a) where
 
-  type Client (NoThrow :> Verb method status ctypes a) =
-    Client (Verb method status ctypes (Envelope '[] a))
+  type Client m (NoThrow :> Verb method status ctypes a) =
+    Client m (Verb method status ctypes (Envelope '[] a))
 
   clientWithRoute
-    :: Proxy (NoThrow :> Verb method status ctypes a)
-    -> Req
-    -> Client (Verb method status ctypes (Envelope '[] a))
-  clientWithRoute Proxy =
-    clientWithRoute (Proxy :: Proxy (Verb method status ctypes (Envelope '[] a)))
+    :: Proxy m
+    -> Proxy (NoThrow :> Verb method status ctypes a)
+    -> Request
+    -> Client m (Verb method status ctypes (Envelope '[] a))
+  clientWithRoute p Proxy =
+    clientWithRoute p (Proxy :: Proxy (Verb method status ctypes (Envelope '[] a)))
 
 -- | When @'Throwing' es@ comes before ':<|>', push @'Throwing' es@ into each
 -- branch of the API.
-instance HasClient ((Throwing es :> api1) :<|> (Throwing es :> api2)) =>
-    HasClient (Throwing es :> (api1 :<|> api2)) where
+instance (RunClient m, HasClient m ((Throwing es :> api1) :<|> (Throwing es :> api2))) =>
+    HasClient m (Throwing es :> (api1 :<|> api2)) where
 
-  type Client (Throwing es :> (api1 :<|> api2)) =
-    Client ((Throwing es :> api1) :<|> (Throwing es :> api2))
+  type Client m (Throwing es :> (api1 :<|> api2)) =
+    Client m ((Throwing es :> api1) :<|> (Throwing es :> api2))
 
   clientWithRoute
-    :: Proxy (Throwing es :> (api1 :<|> api2))
-    -> Req
-    -> Client ((Throwing es :> api1) :<|> (Throwing es :> api2))
-  clientWithRoute _ =
-    clientWithRoute (Proxy :: Proxy ((Throwing es :> api1) :<|> (Throwing es :> api2)))
+    :: Proxy m
+    -> Proxy (Throwing es :> (api1 :<|> api2))
+    -> Request
+    -> Client m ((Throwing es :> api1) :<|> (Throwing es :> api2))
+  clientWithRoute p _ =
+    clientWithRoute p (Proxy :: Proxy ((Throwing es :> api1) :<|> (Throwing es :> api2)))
 
 -- | When 'NoThrow' comes before ':<|>', push 'NoThrow' into each branch of the
 -- API.
-instance HasClient ((NoThrow :> api1) :<|> (NoThrow :> api2)) =>
-    HasClient (NoThrow :> (api1 :<|> api2)) where
+instance (RunClient m, HasClient m ((NoThrow :> api1) :<|> (NoThrow :> api2))) =>
+    HasClient m (NoThrow :> (api1 :<|> api2)) where
 
-  type Client (NoThrow :> (api1 :<|> api2)) =
-    Client ((NoThrow :> api1) :<|> (NoThrow :> api2))
+  type Client m (NoThrow :> (api1 :<|> api2)) =
+    Client m ((NoThrow :> api1) :<|> (NoThrow :> api2))
 
   clientWithRoute
-    :: Proxy (NoThrow :> (api1 :<|> api2))
-    -> Req
-    -> Client ((NoThrow :> api1) :<|> (NoThrow :> api2))
-  clientWithRoute _ =
-    clientWithRoute (Proxy :: Proxy ((NoThrow :> api1) :<|> (NoThrow :> api2)))
+    :: Proxy m
+    -> Proxy (NoThrow :> (api1 :<|> api2))
+    -> Request
+    -> Client m ((NoThrow :> api1) :<|> (NoThrow :> api2))
+  clientWithRoute p _ =
+    clientWithRoute p (Proxy :: Proxy ((NoThrow :> api1) :<|> (NoThrow :> api2)))
 
 -- | When a @'Throws' e@ comes immediately after a @'Throwing' es@, 'Snoc' the
 -- @e@ onto the @es@. Otherwise, if @'Throws' e@ comes before any other
 -- combinator, push it down so it is closer to the 'Verb'.
-instance HasClient (ThrowingNonterminal (Throwing es :> api :> apis)) =>
-    HasClient (Throwing es :> api :> apis) where
+instance (RunClient m, HasClient m (ThrowingNonterminal (Throwing es :> api :> apis))) =>
+    HasClient m (Throwing es :> api :> apis) where
 
-  type Client (Throwing es :> api :> apis) =
-    Client (ThrowingNonterminal (Throwing es :> api :> apis))
+  type Client m (Throwing es :> api :> apis) =
+    Client m (ThrowingNonterminal (Throwing es :> api :> apis))
 
   clientWithRoute
-    :: Proxy (Throwing es :> api :> apis)
-    -> Req
-    -> Client (ThrowingNonterminal (Throwing es :> api :> apis))
-  clientWithRoute _ =
-    clientWithRoute (Proxy :: Proxy (ThrowingNonterminal (Throwing es :> api :> apis)))
+    :: Proxy m
+    -> Proxy (Throwing es :> api :> apis)
+    -> Request
+    -> Client m (ThrowingNonterminal (Throwing es :> api :> apis))
+  clientWithRoute p _ =
+    clientWithRoute p (Proxy :: Proxy (ThrowingNonterminal (Throwing es :> api :> apis)))
 
 -- | When 'NoThrow' comes before any other combinator, push it down so it is
 -- closer to the 'Verb'.
-instance HasClient (api :> NoThrow :> apis) =>
-    HasClient (NoThrow :> api :> apis) where
+instance (RunClient m, HasClient m (api :> NoThrow :> apis)) =>
+    HasClient m (NoThrow :> api :> apis) where
 
-  type Client (NoThrow :> api :> apis) =
-    Client (api :> NoThrow :> apis)
+  type Client m (NoThrow :> api :> apis) =
+    Client m (api :> NoThrow :> apis)
 
   clientWithRoute
-    :: Proxy (NoThrow :> api :> apis)
-    -> Req
-    -> Client (api :> NoThrow :> apis)
-  clientWithRoute _ =
-    clientWithRoute (Proxy :: Proxy (api :> NoThrow :> apis))
+    :: Proxy m
+    -> Proxy (NoThrow :> api :> apis)
+    -> Request
+    -> Client m (api :> NoThrow :> apis)
+  clientWithRoute p _ =
+    clientWithRoute p (Proxy :: Proxy (api :> NoThrow :> apis))
