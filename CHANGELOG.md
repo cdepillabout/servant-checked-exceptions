@@ -1,4 +1,8 @@
 
+## 1.1.0.0
+
+*   Updated the servant dependency to >= 0.12.
+
 ## 1.0.0.0
 
 *   Add a `ErrStatus` class that can be used to set the HTTP Status Code. Given
