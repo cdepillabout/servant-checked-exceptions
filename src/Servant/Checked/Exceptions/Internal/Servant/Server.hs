@@ -40,7 +40,7 @@ import Servant.Server.Internal (ct_wildcard)
 import Servant.Server.Internal.Router (Router, Router', leafRouter)
 import Servant.Server.Internal.RoutingApplication -- (Delayed, DelayedIO, RouteResult(FailFatal, Route), addAcceptCheck, addMethodCheck, runAction)
 import Servant
-  ( (:<|>)
+  ( (:<|>)(..)
   , (:>)
   , Context
   , Handler
@@ -76,6 +76,9 @@ instance (HasServer (Throwing '[e] :> api) context) =>
   type ServerT (Throws e :> api) m =
     ServerT (Throwing '[e] :> api) m
 
+  hoistServerWithContext _ pc nt s =
+    hoistServerWithContext (Proxy :: Proxy (Throwing '[e] :> api)) pc nt s
+
   route
     :: Proxy (Throws e :> api)
     -> Context context
@@ -90,6 +93,9 @@ instance (HasServer (VerbWithErr method status ctypes es a) context) =>
 
   type ServerT (Throwing es :> Verb method status ctypes a) m =
     ServerT (VerbWithErr method status ctypes es a) m
+
+  hoistServerWithContext _ =
+    hoistServerWithContext (Proxy :: Proxy (VerbWithErr method status ctypes es a))
 
   route
     :: Proxy (Throwing es :> Verb method status ctypes a)
@@ -111,6 +117,9 @@ instance
   type ServerT (NoThrow :> Verb method status ctypes a) m =
     ServerT (VerbWithErr method status ctypes '[] a) m
 
+  hoistServerWithContext _ =
+    hoistServerWithContext (Proxy :: Proxy (VerbWithErr method status ctypes '[] a))
+
   route
     :: Proxy (NoThrow :> Verb method status ctypes a)
     -> Context context
@@ -126,6 +135,9 @@ instance HasServer ((Throwing es :> api1) :<|> (Throwing es :> api2)) context =>
   type ServerT (Throwing es :> (api1 :<|> api2)) m =
     ServerT ((Throwing es :> api1) :<|> (Throwing es :> api2)) m
 
+  hoistServerWithContext _ =
+    hoistServerWithContext (Proxy :: Proxy ((Throwing es :> api1) :<|> (Throwing es :> api2)))
+
   route
     :: Proxy (Throwing es :> (api1 :<|> api2))
     -> Context context
@@ -140,6 +152,9 @@ instance HasServer ((NoThrow :> api1) :<|> (NoThrow :> api2)) context =>
 
   type ServerT (NoThrow :> (api1 :<|> api2)) m =
     ServerT ((NoThrow :> api1) :<|> (NoThrow :> api2)) m
+
+  hoistServerWithContext _ =
+    hoistServerWithContext (Proxy :: Proxy ((NoThrow :> api1) :<|> (NoThrow :> api2)))
 
   route
     :: Proxy (NoThrow :> (api1 :<|> api2))
@@ -157,6 +172,9 @@ instance HasServer (ThrowingNonterminal (Throwing es :> api :> apis)) context =>
   type ServerT (Throwing es :> api :> apis) m =
     ServerT (ThrowingNonterminal (Throwing es :> api :> apis)) m
 
+  hoistServerWithContext _ =
+    hoistServerWithContext (Proxy :: Proxy (ThrowingNonterminal (Throwing es :> api :> apis)))
+
   route
     :: Proxy (Throwing es :> api :> apis)
     -> Context context
@@ -171,6 +189,9 @@ instance HasServer (api :> NoThrow :> apis) context =>
 
   type ServerT (NoThrow :> api :> apis) m =
     ServerT (api :> NoThrow :> apis) m
+
+  hoistServerWithContext _ =
+    hoistServerWithContext (Proxy :: Proxy (api :> NoThrow :> apis))
 
   route
     :: Proxy (NoThrow :> api :> apis)
@@ -194,6 +215,8 @@ instance
 
   type ServerT (VerbWithErr method successStatus ctypes es a) m =
     m (Envelope es a)
+
+  hoistServerWithContext _ _ nt s = nt s
 
   route
     :: Proxy (VerbWithErr method successStatus ctypes es a)
