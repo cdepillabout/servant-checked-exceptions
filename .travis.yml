@@ -63,12 +63,12 @@ matrix:
   # (There are currently no builds for the same reason as above.)
 
   - env: BUILD=stack ARGS="--resolver nightly"
-    env: BUILD=cabal GHCVER=head  CABALVER=head HAPPYVER=1.19.5 ALEXVER=3.1.7
     compiler: ": #stack nightly osx"
     os: osx
 
   allow_failures:
   - env: BUILD=stack ARGS="--resolver nightly"
+  - env: BUILD=cabal GHCVER=head  CABALVER=head HAPPYVER=1.19.5 ALEXVER=3.1.7
   - os: osx
 
 before_install:
