@@ -64,22 +64,32 @@ module Servant.Checked.Exceptions.Internal.Envelope
 import Control.Applicative ((<|>))
 import Control.Monad.Fix (MonadFix(mfix))
 import Data.Aeson
-       (FromJSON(parseJSON), ToJSON(toJSON), Value, (.=), (.:), object,
-        withObject)
+  ( FromJSON(parseJSON)
+  , ToJSON(toJSON)
+  , Value
+  , (.:)
+  , (.=)
+  , object
+  , withObject
+  )
 import Data.Aeson.Types (Parser)
 import Data.Data (Data)
 import Data.Semigroup (Semigroup((<>), stimes), stimesIdempotent)
 import Data.Typeable (Typeable)
+import Data.WorldPeace
+  ( IsMember
+  , OpenUnion
+  , ReturnX
+  , ToOpenProduct
+  , absurdUnion
+  , catchesOpenUnion
+  , openUnionLift
+  , openUnionPrism
+  )
 import GHC.Generics (Generic)
 
 import Servant.Checked.Exceptions.Internal.Prism
        (Iso, Prism, Prism', iso, preview, prism)
-import Servant.Checked.Exceptions.Internal.Product (ToOpenProduct)
-import Servant.Checked.Exceptions.Internal.Union
-       (IsMember, OpenUnion, absurdUnion, catchesOpenUnion, openUnionLift,
-        openUnionPrism)
-import Servant.Checked.Exceptions.Internal.Util (ReturnX)
-
 
 -- $setup
 -- >>> :set -XDataKinds
