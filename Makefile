@@ -1,8 +1,11 @@
-.PHONY: build build-example clean dump-splices dump-th example-client example-docs example-server ghci haddock haddock-server lint test upload watch watch-example watch-haddock watch-test
+.PHONY: build build-example build-fast clean dump-splices dump-th example-client example-docs example-server ghci haddock haddock-server lint test upload watch watch-example watch-haddock watch-test
 all: build
 
 build:
 	stack build
+
+build-fast:
+	stack build --fast
 
 build-example:
 	stack build --flag servant-checked-exceptions:buildexample
