@@ -36,10 +36,24 @@ import Data.WorldPeace (OpenUnion, Union(That, This))
 import GHC.TypeLits (KnownNat, natVal)
 import Network.HTTP.Types
 import Network.Wai
-import Servant.API.ContentTypes -- (AcceptHeader(AcceptHeader), AllCTRender, handleAcceptH)
+import Servant.API.ContentTypes
+  ( AcceptHeader(AcceptHeader)
+  , AllCTRender
+  , AllMime
+  , canHandleAcceptH
+  , handleAcceptH
+  )
 import Servant.Server.Internal (ct_wildcard)
 import Servant.Server.Internal.Router (Router, Router', leafRouter)
-import Servant.Server.Internal.RoutingApplication -- (Delayed, DelayedIO, RouteResult(FailFatal, Route), addAcceptCheck, addMethodCheck, runAction)
+import Servant.Server.Internal.RoutingApplication
+  ( Delayed
+  , DelayedIO
+  , RouteResult(FailFatal, Route)
+  , addAcceptCheck
+  , addMethodCheck
+  , delayedFail
+  , runAction
+  )
 import Servant
   ( (:<|>)(..)
   , (:>)
