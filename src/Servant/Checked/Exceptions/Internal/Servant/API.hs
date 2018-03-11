@@ -118,3 +118,7 @@ class ErrStatus e where
 type family AllErrStatus (es :: [k]) :: Constraint where
   AllErrStatus '[] = ()
   AllErrStatus (a ': as) = (ErrStatus a, AllErrStatus as)
+
+-- $setup
+-- >>> :set -XDataKinds
+-- >>> :set -XTypeOperators

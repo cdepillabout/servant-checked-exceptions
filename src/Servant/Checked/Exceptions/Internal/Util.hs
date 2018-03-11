@@ -34,5 +34,7 @@ type family Snoc (as :: [k]) (b :: k) where
   Snoc (a ': as) b = (a ': Snoc as b)
 
 -- $setup
+-- >>> :set -XDataKinds
+-- >>> :set -XTypeOperators
 -- >>> import Data.Type.Equality ((:~:)(Refl))
 
