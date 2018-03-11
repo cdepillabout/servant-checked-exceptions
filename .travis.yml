@@ -85,9 +85,9 @@ before_install:
 - |
   if [ `uname` = "Darwin" ]
   then
-    curl --insecure -L https://www.stackage.org/stack/osx-x86_64 | tar xz --strip-components=1 --include '*/stack' -C ~/.local/bin
+    travis_retry curl --insecure -L https://www.stackage.org/stack/osx-x86_64 | tar xz --strip-components=1 --include '*/stack' -C ~/.local/bin
   else
-    curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
+    travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
   fi
 
   # Use the more reliable S3 mirror of Hackage
@@ -104,32 +104,58 @@ install:
 - echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
 - if [ -f configure.ac ]; then autoreconf -i; fi
 - |
+  set -ex
   case "$BUILD" in
     stack)
-      stack --no-terminal --install-ghc $ARGS test --only-dependencies
+      # Add in extra-deps for older snapshots, as necessary
+      stack --no-terminal --install-ghc $ARGS test --bench --dry-run || ( \
+        stack --no-terminal $ARGS build cabal-install && \
+        stack --no-terminal $ARGS solver --update-config)
+
+      # Build the dependencies
+      stack --no-terminal --install-ghc $ARGS test --bench --only-dependencies
       ;;
     cabal)
       cabal --version
       travis_retry cabal update
-      cabal install --only-dependencies --enable-tests --enable-benchmarks --force-reinstalls --ghc-options=-O0 --reorder-goals --max-backjumps=-1 $CABALARGS
+
+      # Get the list of packages from the stack.yaml file. Note that
+      # this will also implicitly run hpack as necessary to generate
+      # the .cabal files needed by cabal-install.
+      PACKAGES=$(stack --install-ghc query locals | grep '^ *path' | sed 's@^ *path:@@')
+
+      cabal install --only-dependencies --enable-tests --enable-benchmarks --force-reinstalls --ghc-options=-O0 --reorder-goals --max-backjumps=-1 $CABALARGS $PACKAGES
       ;;
   esac
+  set +ex
 
 script:
 - |
-  mkdir -p test/test-dir/empty-dir
+  set -ex
   case "$BUILD" in
     stack)
-      stack --no-terminal $ARGS test --haddock --no-haddock-deps --flag servant-checked-exceptions:buildexample
+      stack --no-terminal $ARGS test --bench --no-run-benchmarks --haddock --no-haddock-deps --flag servant-checked-exceptions:buildexample
       ;;
     cabal)
-      cabal configure --enable-tests --enable-benchmarks -v2 --ghc-options="-O0 -Werror" --flags="buildexample"
-      cabal build
-      cabal check || [ "$CABALVER" == "1.16" ]
-      cabal test
-      cabal sdist
-      cabal copy
-      SRC_TGZ=$(cabal info . | awk '{print $2;exit}').tar.gz && \
-        (cd dist && cabal install --force-reinstalls "$SRC_TGZ")
+      cabal install --enable-tests --enable-benchmarks --force-reinstalls --ghc-options=-O0 --reorder-goals --max-backjumps=-1 $CABALARGS $PACKAGES
+
+      ORIGDIR=$(pwd)
+      for dir in $PACKAGES
+      do
+        cd $dir
+        cabal check || [ "$CABALVER" == "1.16" ]
+        cabal sdist
+        PKGVER=$(cabal info . | awk '{print $2;exit}')
+        SRC_TGZ=$PKGVER.tar.gz
+        cd dist
+        tar zxfv "$SRC_TGZ"
+        cd "$PKGVER"
+        cabal configure --enable-tests --ghc-options -O0 --flags="buildexample"
+        cabal build
+        cabal test
+        cd $ORIGDIR
+      done
       ;;
   esac
+  set +ex
+

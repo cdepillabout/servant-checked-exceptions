@@ -1,4 +1,4 @@
-.PHONY: build build-example build-fast clean dump-splices dump-th example-client example-docs example-server ghci haddock haddock-server lint test upload watch watch-example watch-haddock watch-test
+.PHONY: build build-example build-fast clean dump-splices dump-th example-client example-docs example-server ghci haddock haddock-server lint test test-fast upload watch watch-example watch-haddock watch-test
 all: build
 
 build:
@@ -15,8 +15,7 @@ clean:
 
 # dump the template haskell
 dump-splices: dump-th
-dump-th:
-	mkdir -p test/test-dir/empty-dir
+dump-th: test/test-dir/empty-dir
 	-stack build --ghc-options="-ddump-splices"
 	@echo
 	@echo "Splice files:"
@@ -44,6 +43,10 @@ test/test-dir/empty-dir:
 
 test: test/test-dir/empty-dir
 	stack test
+
+test-fast: test/test-dir/empty-dir
+	stack test --fast
+
 
 # Run hlint.
 lint:
