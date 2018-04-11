@@ -142,7 +142,7 @@ run clientEnv Options{query, useStrict = _, useNoErr = _} = runLax clientEnv que
 main :: IO ()
 main = do
   manager <- newManager defaultManagerSettings
-  let clientEnv = ClientEnv manager baseUrl
+  let clientEnv = ClientEnv manager baseUrl Nothing
   options <- execParser opts
   run clientEnv options
   where
