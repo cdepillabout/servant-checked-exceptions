@@ -158,9 +158,9 @@ instance ErrStatus Int where
   toErrStatus :: Int -> Status
   toErrStatus _ = status404
 
-type TestThrows = Capture "foobar" Double :> Throws Int :> Get '[JSON] String
+type TestThrows = "throws" :> Capture "foobar" Double :> Throws Int :> Get '[JSON] String
 
-type TestNoThrow = Capture "baz" Integer :> NoThrow :> Get '[JSON] String
+type TestNoThrow = "nothrow" :> NoThrow :> Get '[JSON] String
 
 type TestApi = TestThrows :<|> TestNoThrow
 
@@ -171,10 +171,10 @@ testThrowsGet :: Double -> Handler (Envelope '[Int] String)
 testThrowsGet double =
   if double < 0
     then pureErrEnvelope (0 :: Int)
-    else pureSuccEnvelope "success"
+    else pureSuccEnvelope "successThrows"
 
-testNoThrowsGet :: Integer -> Handler (Envelope '[] String)
-testNoThrowsGet _ = pureSuccEnvelope "success"
+testNoThrowsGet :: Handler (Envelope '[] String)
+testNoThrowsGet = pureSuccEnvelope "successNoThrow"
 
 app :: Application
 app = serve (Proxy :: Proxy TestApi) server
@@ -185,9 +185,9 @@ serverTestsIO =
     with (pure app) $ do
       describe "Throws" $ do
         it "handler can return error envelope" $
-          get "/-5" `shouldRespondWith` "{\"err\":0}" { matchStatus = 404 }
+          get "/throws/-5" `shouldRespondWith` "{\"err\":0}" { matchStatus = 404 }
         it "handler can return success envelope" $
-          get "/10" `shouldRespondWith` "{\"data\":\"success\"}"
+          get "/throws/10" `shouldRespondWith` "{\"data\":\"successThrows\"}"
       describe "NoThrow" $ do
         it "handler can return success envelope" $
-          get "/10" `shouldRespondWith` "{\"data\":\"success\"}"
+          get "/nothrow" `shouldRespondWith` "{\"data\":\"successNoThrow\"}"
