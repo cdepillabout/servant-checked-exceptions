@@ -30,36 +30,7 @@ Other than the 'Envelope' type, the most important thing in this module is the
 'ToJSON' instance for 'Envelope'.
 -}
 
-module Servant.Checked.Exceptions.Internal.Envelope
-  (
-  -- * Envelope
-    Envelope(..)
-  -- * Helper functions
-  -- ** Envelope Constructors
-  , toSuccEnvelope
-  , toErrEnvelope
-  , pureSuccEnvelope
-  , pureErrEnvelope
-  -- ** Envelope Destructors
-  , envelope
-  , emptyEnvelope
-  , fromEnvelope
-  , fromEnvelopeOr
-  , fromEnvelopeM
-  , fromEnvelopeOrM
-  , errEnvelopeMatch
-  , catchesEnvelope
-  -- ** Optics
-  , _SuccEnvelope
-  , _ErrEnvelope
-  , _ErrEnvelopeErr
-  -- ** Either
-  , envelopeToEither
-  , eitherToEnvelope
-  , isoEnvelopeEither
-  -- * Setup code for doctests
-  -- $setup
-  ) where
+module Servant.Checked.Exceptions.Internal.Envelope where
 
 import Control.Applicative ((<|>))
 import Control.Monad.Fix (MonadFix(mfix))

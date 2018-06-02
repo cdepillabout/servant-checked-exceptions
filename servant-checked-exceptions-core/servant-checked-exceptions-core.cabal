@@ -1,0 +1,84 @@
+name:                servant-checked-exceptions-core
+version:             2.0.0.0
+synopsis:            Checked exceptions for Servant APIs.
+description:         Please see <https://github.com/cdepillabout/servant-checked-exceptions#readme README.md>.
+homepage:            https://github.com/cdepillabout/servant-checked-exceptions
+license:             BSD3
+license-file:        LICENSE
+author:              Dennis Gosnell
+maintainer:          cdep.illabout@gmail.com
+copyright:           2017-2018 Dennis Gosnell
+category:            Text
+build-type:          Simple
+extra-source-files:  CHANGELOG.md
+                   , README.md
+cabal-version:       >=1.10
+
+flag buildexample
+  description: Build a small example program
+  default: False
+
+library
+  hs-source-dirs:      src
+  exposed-modules:     Servant.Checked.Exceptions
+                     , Servant.Checked.Exceptions.Envelope
+                     , Servant.Checked.Exceptions.Verbs
+                     , Servant.Checked.Exceptions.Internal
+                     , Servant.Checked.Exceptions.Internal.Envelope
+                     , Servant.Checked.Exceptions.Internal.Prism
+                     , Servant.Checked.Exceptions.Internal.Servant
+                     , Servant.Checked.Exceptions.Internal.Servant.API
+                     , Servant.Checked.Exceptions.Internal.Servant.Docs
+                     , Servant.Checked.Exceptions.Internal.Util
+                     , Servant.Checked.Exceptions.Internal.Verbs
+  build-depends:       base >= 4.9 && < 5
+                     , aeson
+                     , bytestring
+                     , deepseq
+                     , http-media
+                     , http-types
+                     , profunctors
+                     , tagged
+                     , servant >= 0.12
+                     , servant-docs >= 0.10
+                     , text
+                     , world-peace
+  default-language:    Haskell2010
+  ghc-options:         -Wall -fwarn-incomplete-uni-patterns -fwarn-incomplete-record-updates -fwarn-monomorphism-restriction
+  other-extensions:    QuasiQuotes
+                     , TemplateHaskell
+
+executable servant-checked-exceptions-example-docs
+  main-is:             Docs.hs
+  other-modules:       Api
+  hs-source-dirs:      example
+  build-depends:       base
+                     , aeson
+                     , http-api-data
+                     , http-types
+                     , servant
+                     , servant-checked-exceptions-core
+                     , servant-docs
+                     , text
+  default-language:    Haskell2010
+  ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
+
+  if flag(buildexample)
+    buildable:         True
+  else
+    buildable:         False
+
+test-suite servant-checked-exceptions-doctest
+  if impl(ghcjs)
+    buildable: False
+  type:                exitcode-stdio-1.0
+  main-is:             DocTest.hs
+  hs-source-dirs:      test
+  build-depends:       base
+                     , doctest
+                     , Glob
+  default-language:    Haskell2010
+  ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
+source-repository head
+  type:     git
+  location: git@github.com:cdepillabout/servant-checked-exceptions.git

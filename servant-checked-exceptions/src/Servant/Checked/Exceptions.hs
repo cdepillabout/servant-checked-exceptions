@@ -79,95 +79,21 @@ type with the 'catchesEnvelope' function.
 Checkout the
 <https://github.com/cdepillabout/servant-checked-exceptions/tree/master/example example>
 in the repository on Github.  It includes a fleshed-out example of an
-<https://github.com/cdepillabout/servant-checked-exceptions/blob/master/example/Api.hs api>,
-<https://github.com/cdepillabout/servant-checked-exceptions/blob/master/example/Server.hs server>,
-<https://github.com/cdepillabout/servant-checked-exceptions/blob/master/example/Client.hs client>,
+<https://github.com/cdepillabout/servant-checked-exceptions/blob/master/servant-checked-exceptions/example/Api.hs api>,
+<https://github.com/cdepillabout/servant-checked-exceptions/blob/master/servant-checked-exceptions/example/Server.hs server>,
+<https://github.com/cdepillabout/servant-checked-exceptions/blob/master/servant-checked-exceptions/example/Client.hs client>,
 and
-<https://github.com/cdepillabout/servant-checked-exceptions/blob/master/example/Docs.hs documentation>.
+<https://github.com/cdepillabout/servant-checked-exceptions/blob/master/servant-checked-exceptions-core/example/Docs.hs documentation>.
 The <https://github.com/cdepillabout/servant-checked-exceptions README.md>
 shows how to compile and run the examples.
 -}
 
-module Servant.Checked.Exceptions
-  (
-  -- * Servant Types
-  -- ** 'Throws' API parameter
-    Throws
-  -- ** 'NoThrow' API parameter
-  , NoThrow
-  -- ** HTTP Error Status Code
-  , ErrStatus(toErrStatus)
-  , Status
-  -- ** Verbs
-  , VerbWithErr
-  -- *** Specialized Verbs
-  -- **** HTTP 200
-  , GetWithErr
-  , PostWithErr
-  , PutWithErr
-  , DeleteWithErr
-  , PatchWithErr
-  -- **** HTTP 201
-  , PostCreatedWithErr
-  -- **** HTTP 202
-  , GetAcceptedWithErr
-  , PostAcceptedWithErr
-  , DeleteAcceptedWithErr
-  , PatchAcceptedWithErr
-  , PutAcceptedWithErr
-  -- **** HTTP 203
-  , GetNonAuthoritativeWithErr
-  , PostNonAuthoritativeWithErr
-  , DeleteNonAuthoritativeWithErr
-  , PatchNonAuthoritativeWithErr
-  , PutNonAuthoritativeWithErr
-  -- **** HTTP 204
-  , GetNoContentWithErr
-  , PostNoContentWithErr
-  , DeleteNoContentWithErr
-  , PatchNoContentWithErr
-  , PutNoContentWithErr
-  -- **** HTTP 205
-  , GetResetContentWithErr
-  , PostResetContentWithErr
-  , DeleteResetContentWithErr
-  , PatchResetContentWithErr
-  , PutResetContentWithErr
-  -- **** HTTP 206
-  , GetPartialContentWithErr
-  -- * 'Envelope' response wrapper
-  , Envelope(..)
-  -- ** 'Envelope' helper functions
-  -- *** 'Envelope' constructors
-  , toSuccEnvelope
-  , toErrEnvelope
-  , pureSuccEnvelope
-  , pureErrEnvelope
-  -- *** 'Envelope' destructors
-  , envelope
-  , emptyEnvelope
-  , fromEnvelope
-  , fromEnvelopeOr
-  , fromEnvelopeM
-  , fromEnvelopeOrM
-  , errEnvelopeMatch
-  , catchesEnvelope
-  -- *** 'Envelope' optics
-  , _SuccEnvelope
-  , _ErrEnvelope
-  , _ErrEnvelopeErr
-  -- *** 'Envelope' and 'Either'
-  , envelopeToEither
-  , eitherToEnvelope
-  , isoEnvelopeEither
-  -- * Re-exported modules
-  -- | "Data.WorldPeace" exports the 'OpenUnion' type as well as other
-  -- combinators.  It also exports the 'OpenProduct' type and 'ToProduct' type
-  -- class used by some of the functions above.
-  , module Data.WorldPeace
+{-# LANGUAGE PackageImports #-}
+
+module Servant.Checked.Exceptions (
+    module Servant.Checked.Exceptions
+  , module Servant.Checked.Exceptions.Internal
   ) where
 
-import Data.WorldPeace
-import Network.HTTP.Types (Status)
-
+import "servant-checked-exceptions-core" Servant.Checked.Exceptions
 import Servant.Checked.Exceptions.Internal
