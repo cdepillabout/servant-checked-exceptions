@@ -210,3 +210,13 @@ search api:
 ```
 
 You can see that both the success and error responses are documented.
+
+## Packaging the core types
+
+[`servant-checked-exceptions-core`](https://hackage.haskell.org/package/servant-checked-exceptions-core)
+exports the core types need for building an API with checked exceptions,
+allowing you to avoid depending on server-side libraries like `warp`, `Glob`
+and `servant-server`. This can be useful if you are writing an API meant to be
+shared with ghcjs and run in a browser, where these dependencies aren't
+available.
+

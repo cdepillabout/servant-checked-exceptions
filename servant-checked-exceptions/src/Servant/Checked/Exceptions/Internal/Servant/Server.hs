@@ -76,8 +76,8 @@ import Servant.Checked.Exceptions.Internal.Servant.API
   , Throwing
   , ThrowingNonterminal
   , Throws
-  , VerbWithErr
   )
+import Servant.Checked.Exceptions.Verbs (VerbWithErr)
 
 -- TODO: Make sure to also account for when headers are being used.
 -- This might be hard to do:
