@@ -220,3 +220,7 @@ and `servant-server`. This can be useful if you are writing an API meant to be
 shared with ghcjs and run in a browser, where these dependencies aren't
 available.
 
+## Maintainers
+
+- [![Maintainer: cdepillabout](https://img.shields.io/badge/maintainer-cdepillabout-lightgrey.svg)](http://github.com/cdepillabout)
+- [![Maintainer: imalsogreg](https://img.shields.io/badge/maintainer-imalsogreg-lightgrey.svg)](http://github.com/imalsogreg)
