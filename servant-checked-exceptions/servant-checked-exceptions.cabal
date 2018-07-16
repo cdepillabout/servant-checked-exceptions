@@ -60,7 +60,7 @@ executable servant-checked-exceptions-example-client
                      , optparse-applicative
                      , servant
                      , servant-checked-exceptions
-                     , servant-client
+                     , servant-client >= 0.13
                      , text
   default-language:    Haskell2010
   ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
