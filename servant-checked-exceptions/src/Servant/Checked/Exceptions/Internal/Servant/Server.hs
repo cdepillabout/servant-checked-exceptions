@@ -45,13 +45,12 @@ import Servant.API.ContentTypes
   )
 import Servant.Server.Internal (ct_wildcard)
 import Servant.Server.Internal.Router (Router, Router', leafRouter)
-import Servant.Server.Internal.RoutingApplication
+import Servant.Server.Internal.RouteResult (RouteResult(FailFatal, Route))
+import Servant.Server.Internal.DelayedIO (DelayedIO, delayedFail)
+import Servant.Server.Internal.Delayed
   ( Delayed
-  , DelayedIO
-  , RouteResult(FailFatal, Route)
   , addAcceptCheck
   , addMethodCheck
-  , delayedFail
   , runAction
   )
 import Servant
@@ -90,8 +89,8 @@ instance (HasServer (Throwing '[e] :> api) context) =>
   type ServerT (Throws e :> api) m =
     ServerT (Throwing '[e] :> api) m
 
-  hoistServerWithContext _ pc nt s =
-    hoistServerWithContext (Proxy :: Proxy (Throwing '[e] :> api)) pc nt s
+  hoistServerWithContext _ =
+    hoistServerWithContext (Proxy :: Proxy (Throwing '[e] :> api))
 
   route
     :: Proxy (Throws e :> api)
@@ -230,7 +229,7 @@ instance
   type ServerT (VerbWithErr method successStatus ctypes es a) m =
     m (Envelope es a)
 
-  hoistServerWithContext _ _ nt s = nt s
+  hoistServerWithContext _ _ nt = nt
 
   route
     :: Proxy (VerbWithErr method successStatus ctypes es a)
@@ -317,4 +316,4 @@ processMethodRouter handleA status method headers request = case handleA of
   Just (contentT, body) -> Route $ responseLBS status hdrs bdy
     where
       bdy = if allowedMethodHead method request then "" else body
-      hdrs = (hContentType, LBS.toStrict contentT) : (fromMaybe [] headers)
+      hdrs = (hContentType, LBS.toStrict contentT) : fromMaybe [] headers
