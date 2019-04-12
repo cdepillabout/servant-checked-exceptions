@@ -1,3 +1,9 @@
+## 2.1.0.0
+
+*   Add support for servant-0.16 and remove support for all previous version of
+    servant. [#31](https://github.com/cdepillabout/servant-checked-exceptions/pull/31)
+    Thanks [Schell Carl Scivally](https://github.com/schell)!
+
 ## 2.0.0.0
 
 *    Initial release of `servant-checked-exceptions-core` package, with

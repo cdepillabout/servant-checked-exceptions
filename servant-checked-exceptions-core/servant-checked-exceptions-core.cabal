@@ -1,5 +1,5 @@
 name:                servant-checked-exceptions-core
-version:             2.0.0.0
+version:             2.1.0.0
 synopsis:            Checked exceptions for Servant APIs.
 description:         Please see <https://github.com/cdepillabout/servant-checked-exceptions#readme README.md>.
 homepage:            https://github.com/cdepillabout/servant-checked-exceptions
@@ -8,7 +8,7 @@ license-file:        LICENSE
 author:              Dennis Gosnell
 maintainer:          cdep.illabout@gmail.com
 copyright:           2017-2018 Dennis Gosnell
-category:            Text
+category:            Web
 build-type:          Simple
 extra-source-files:  CHANGELOG.md
                    , README.md
@@ -34,7 +34,6 @@ library
   build-depends:       base >= 4.9 && < 5
                      , aeson
                      , bytestring
-                     , deepseq
                      , http-media
                      , http-types
                      , profunctors
@@ -48,7 +47,7 @@ library
   other-extensions:    QuasiQuotes
                      , TemplateHaskell
 
-executable servant-checked-exceptions-example-docs
+executable servant-checked-exceptions-core-example-docs
   main-is:             Docs.hs
   other-modules:       Api
   hs-source-dirs:      example
@@ -68,7 +67,7 @@ executable servant-checked-exceptions-example-docs
   else
     buildable:         False
 
-test-suite servant-checked-exceptions-doctest
+test-suite servant-checked-exceptions-core-doctest
   if impl(ghcjs)
     buildable: False
   type:                exitcode-stdio-1.0
