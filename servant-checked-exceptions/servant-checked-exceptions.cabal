@@ -98,7 +98,6 @@ executable servant-checked-exceptions-example-server
                      , aeson
                      , http-api-data
                      , http-types
-                     , natural-transformation
                      , servant
                      , servant-checked-exceptions
                      , servant-server
