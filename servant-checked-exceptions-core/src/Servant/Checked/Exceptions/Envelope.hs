@@ -2,12 +2,12 @@ module Servant.Checked.Exceptions.Envelope (
   -- * Envelope
     Envelope(..)
   -- * Helper functions
-  -- ** Envelope Constructors
+  -- ** Envelope constructors
   , toSuccEnvelope
   , toErrEnvelope
   , pureSuccEnvelope
   , pureErrEnvelope
-  -- ** Envelope Destructors
+  -- ** Envelope destructors
   , envelope
   , emptyEnvelope
   , fromEnvelope
@@ -24,8 +24,16 @@ module Servant.Checked.Exceptions.Envelope (
   , envelopeToEither
   , eitherToEnvelope
   , isoEnvelopeEither
+  -- * EnvelopeT
+  , EnvelopeT(..)
+  -- ** EnvelopeT constructors
+  , pureSuccEnvT
+  , throwErrEnvT
+  -- ** ExceptT
+  , envTToExceptT
+  , exceptTToEnvT
   -- * Setup code for doctests
   -- $setup
   ) where
 
-import Servant.Checked.Exceptions.Internal.Envelope
+import Servant.Checked.Exceptions.Internal

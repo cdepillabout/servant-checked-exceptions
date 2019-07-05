@@ -160,18 +160,23 @@ module Servant.Checked.Exceptions
   , envelopeToEither
   , eitherToEnvelope
   , isoEnvelopeEither
+  -- * 'EnvelopeT' short-circuiting monad transformer
+  , EnvelopeT(..)
+  -- ** 'EnvelopeT' helper functions
+  -- *** 'EnvelopeT' constructors
+  , pureSuccEnvT
+  , throwErrEnvT
+  -- ** 'Envelope' and 'ExceptT'
+  , envTToExceptT
+  , exceptTToEnvT
   -- * Re-exported modules
   -- | "Data.WorldPeace" exports the 'OpenUnion' type as well as other
   -- combinators.  It also exports the 'OpenProduct' type and 'ToProduct' type
   -- class used by some of the functions above.
   , module Data.WorldPeace
-  , module Servant.Checked.Exceptions.Internal.Servant.Docs
   ) where
 
 import Data.WorldPeace
 import Network.HTTP.Types (Status)
 
-import Servant.Checked.Exceptions.Internal.Envelope
-import Servant.Checked.Exceptions.Internal.Servant.API
-import Servant.Checked.Exceptions.Internal.Servant.Docs
-import Servant.Checked.Exceptions.Internal.Verbs
+import Servant.Checked.Exceptions.Internal

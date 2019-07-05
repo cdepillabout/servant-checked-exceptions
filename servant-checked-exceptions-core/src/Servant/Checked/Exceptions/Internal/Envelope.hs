@@ -56,11 +56,13 @@ import Data.WorldPeace
   , catchesOpenUnion
   , openUnionLift
   , openUnionPrism
+  , Union(..)
   )
 import GHC.Generics (Generic)
 
 import Servant.Checked.Exceptions.Internal.Prism
        (Iso, Prism, Prism', iso, preview, prism)
+import Servant.Checked.Exceptions.Internal.Util
 
 -- $setup
 -- >>> :set -XDataKinds
@@ -90,6 +92,76 @@ import Servant.Checked.Exceptions.Internal.Prism
 data Envelope es a = ErrEnvelope (OpenUnion es) | SuccEnvelope a
   deriving (Foldable, Functor, Generic, Traversable)
 
+-- | This 'ToJSON' instance encodes an 'Envelope' as an object with one of two
+-- keys depending on whether it is a 'SuccEnvelope' or an 'ErrEnvelope'.
+--
+-- Here is an example of a 'SuccEnvelope':
+--
+-- >>> let string = "hello" :: String
+-- >>> let env = toSuccEnvelope string :: Envelope '[Double] String
+-- >>> putByteStrLn $ encode env
+-- {"data":"hello"}
+--
+-- Here is an example of a 'ErrEnvelope':
+--
+-- >>> let double = 3.5 :: Double
+-- >>> let env' = toErrEnvelope double :: Envelope '[Double] String
+-- >>> putByteStrLn $ encode env'
+-- {"err":3.5}
+instance (ToJSON (OpenUnion es), ToJSON a) => ToJSON (Envelope es a) where
+  toJSON :: Envelope es a -> Value
+  toJSON (ErrEnvelope es) = object ["err" .= es]
+  toJSON (SuccEnvelope a) = object ["data" .= a]
+
+-- | This is only a valid instance when the 'FromJSON' instances for the @es@
+-- don't overlap.
+--
+-- For an explanation, see the documentation on the 'FromJSON' instance for
+-- 'Servant.Checked.Exceptions.Internal.Union.Union'.
+instance (FromJSON (OpenUnion es), FromJSON a) => FromJSON (Envelope es a) where
+  parseJSON :: Value -> Parser (Envelope es a)
+  parseJSON = withObject "Envelope" $ \obj ->
+    SuccEnvelope <$> obj .: "data" <|>
+    ErrEnvelope <$> obj .: "err"
+
+deriving instance (Data (OpenUnion es), Data a, Typeable es) => Data (Envelope es a)
+deriving instance (Eq (OpenUnion es), Eq a) => Eq (Envelope es a)
+deriving instance (Ord (OpenUnion es), Ord a) => Ord (Envelope es a)
+deriving instance (Read (OpenUnion es), Read a) => Read (Envelope es a)
+deriving instance (Show (OpenUnion es), Show a) => Show (Envelope es a)
+deriving instance (Typeable (OpenUnion es), Typeable a) => Typeable (Envelope es a)
+
+instance Applicative (Envelope es) where
+  pure :: a -> Envelope es a
+  pure = SuccEnvelope
+
+  (<*>) :: Envelope es (a -> b) -> Envelope es a -> Envelope es b
+  ErrEnvelope es <*> _ = ErrEnvelope es
+  SuccEnvelope f <*> r = fmap f r
+
+instance Monad (Envelope es) where
+  (>>=) :: Envelope es a -> (a -> Envelope es b) -> Envelope es b
+  ErrEnvelope es >>= _ = ErrEnvelope es
+  SuccEnvelope a >>= k = k a
+
+instance MonadFix (Envelope es) where
+  mfix :: (a -> Envelope es a) -> Envelope es a
+  mfix f =
+    let a = f (unSucc a)
+    in a
+    where
+      unSucc :: Envelope es a -> a
+      unSucc (SuccEnvelope x) = x
+      unSucc (ErrEnvelope _) = errorWithoutStackTrace "mfix Envelope: ErrEnvelope"
+
+instance Semigroup (Envelope es a) where
+  (<>) :: Envelope es a -> Envelope es a -> Envelope es a
+  ErrEnvelope _ <> b = b
+  a      <> _ = a
+
+  stimes :: Integral b => b -> Envelope es a -> Envelope es a
+  stimes = stimesIdempotent
+
 -- | Create an 'ErrEnvelope' from a member of the 'OpenUnion'.
 --
 -- For instance, here is how to create an 'ErrEnvelope' that contains a
@@ -106,7 +178,7 @@ toErrEnvelope = ErrEnvelope . openUnionLift
 -- >>> toSuccEnvelope "hello" :: Envelope '[Double] String
 -- SuccEnvelope "hello"
 toSuccEnvelope :: a -> Envelope es a
-toSuccEnvelope = SuccEnvelope
+toSuccEnvelope = pure
 
 -- | 'pureErrEnvelope' is 'toErrEnvelope' lifted up to an 'Applicative'.
 pureErrEnvelope :: (Applicative m, IsMember e es) => e -> m (Envelope es a)
@@ -394,73 +466,3 @@ catchesEnvelope
   => tuple -> (a -> x) -> Envelope es a -> x
 catchesEnvelope _ a2x (SuccEnvelope a) = a2x a
 catchesEnvelope tuple _ (ErrEnvelope u) = catchesOpenUnion tuple u
-
--- | This 'ToJSON' instance encodes an 'Envelope' as an object with one of two
--- keys depending on whether it is a 'SuccEnvelope' or an 'ErrEnvelope'.
---
--- Here is an example of a 'SuccEnvelope':
---
--- >>> let string = "hello" :: String
--- >>> let env = toSuccEnvelope string :: Envelope '[Double] String
--- >>> putByteStrLn $ encode env
--- {"data":"hello"}
---
--- Here is an example of a 'ErrEnvelope':
---
--- >>> let double = 3.5 :: Double
--- >>> let env' = toErrEnvelope double :: Envelope '[Double] String
--- >>> putByteStrLn $ encode env'
--- {"err":3.5}
-instance (ToJSON (OpenUnion es), ToJSON a) => ToJSON (Envelope es a) where
-  toJSON :: Envelope es a -> Value
-  toJSON (ErrEnvelope es) = object ["err" .= es]
-  toJSON (SuccEnvelope a) = object ["data" .= a]
-
--- | This is only a valid instance when the 'FromJSON' instances for the @es@
--- don't overlap.
---
--- For an explanation, see the documentation on the 'FromJSON' instance for
--- 'Servant.Checked.Exceptions.Internal.Union.Union'.
-instance (FromJSON (OpenUnion es), FromJSON a) => FromJSON (Envelope es a) where
-  parseJSON :: Value -> Parser (Envelope es a)
-  parseJSON = withObject "Envelope" $ \obj ->
-    SuccEnvelope <$> obj .: "data" <|>
-    ErrEnvelope <$> obj .: "err"
-
-deriving instance (Data (OpenUnion es), Data a, Typeable es) => Data (Envelope es a)
-deriving instance (Eq (OpenUnion es), Eq a) => Eq (Envelope es a)
-deriving instance (Ord (OpenUnion es), Ord a) => Ord (Envelope es a)
-deriving instance (Read (OpenUnion es), Read a) => Read (Envelope es a)
-deriving instance (Show (OpenUnion es), Show a) => Show (Envelope es a)
-deriving instance (Typeable (OpenUnion es), Typeable a) => Typeable (Envelope es a)
-
-instance Applicative (Envelope es) where
-  pure :: a -> Envelope es a
-  pure = SuccEnvelope
-
-  (<*>) :: Envelope es (a -> b) -> Envelope es a -> Envelope es b
-  ErrEnvelope es <*> _ = ErrEnvelope es
-  SuccEnvelope f <*> r = fmap f r
-
-instance Monad (Envelope es) where
-  (>>=) :: Envelope es a -> (a -> Envelope es b) -> Envelope es b
-  ErrEnvelope es >>= _ = ErrEnvelope es
-  SuccEnvelope a >>= k = k a
-
-instance MonadFix (Envelope es) where
-  mfix :: (a -> Envelope es a) -> Envelope es a
-  mfix f =
-    let a = f (unSucc a)
-    in a
-    where
-      unSucc :: Envelope es a -> a
-      unSucc (SuccEnvelope x) = x
-      unSucc (ErrEnvelope _) = errorWithoutStackTrace "mfix Envelope: ErrEnvelope"
-
-instance Semigroup (Envelope es a) where
-  (<>) :: Envelope es a -> Envelope es a -> Envelope es a
-  ErrEnvelope _ <> b = b
-  a      <> _ = a
-
-  stimes :: Integral b => b -> Envelope es a -> Envelope es a
-  stimes = stimesIdempotent

@@ -25,6 +25,7 @@ library
                      , Servant.Checked.Exceptions.Verbs
                      , Servant.Checked.Exceptions.Internal
                      , Servant.Checked.Exceptions.Internal.Envelope
+                     , Servant.Checked.Exceptions.Internal.EnvelopeT
                      , Servant.Checked.Exceptions.Internal.Prism
                      , Servant.Checked.Exceptions.Internal.Servant
                      , Servant.Checked.Exceptions.Internal.Servant.API
@@ -36,8 +37,10 @@ library
                      , bytestring
                      , http-media
                      , http-types
+                     , mtl
                      , profunctors
                      , tagged
+                     , transformers
                      , servant >= 0.12
                      , servant-docs >= 0.10
                      , text
