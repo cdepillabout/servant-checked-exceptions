@@ -35,7 +35,14 @@ module Servant.Checked.Exceptions.Internal.EnvelopeT where
 import Control.Monad.Except (ExceptT(ExceptT))
 import Control.Monad.IO.Class (MonadIO(liftIO))
 import Control.Monad.Trans.Class (MonadTrans(lift))
-import Data.Functor.Classes (Show1, liftShowList, liftShowsPrec, showsPrec1, showsUnaryWith)
+import Data.Functor.Classes
+  ( Show1
+  , liftShowList
+  , liftShowsPrec
+  , showsPrec1
+  , showsUnaryWith
+  )
+import Data.Functor.Contravariant (Contravariant(contramap))
 import Data.WorldPeace
   ( Contains
   , IsMember
@@ -47,6 +54,7 @@ import Servant.Checked.Exceptions.Internal.Envelope
   , combineEnvelopes
   , eitherToEnvelope
   , emptyEnvelope
+  , envelope
   , envelopeToEither
   , pureErrEnvelope
   , pureSuccEnvelope
@@ -111,6 +119,20 @@ instance MonadTrans (EnvelopeT es) where
 instance MonadIO m => MonadIO (EnvelopeT es m) where
   liftIO :: IO a -> EnvelopeT es m a
   liftIO = lift . liftIO
+
+instance Foldable m => Foldable (EnvelopeT es m) where
+  foldMap f (EnvelopeT m) = foldMap (envelope (const mempty) f) m
+
+instance (Traversable m) => Traversable (EnvelopeT es m) where
+  traverse
+    :: Applicative f => (a -> f b) -> EnvelopeT es m a -> f (EnvelopeT es m b)
+  traverse f (EnvelopeT m) =
+    fmap EnvelopeT $
+      traverse (envelope (pure . ErrEnvelope) (fmap SuccEnvelope . f)) m
+
+instance Contravariant m => Contravariant (EnvelopeT es m) where
+  contramap :: (b -> a) -> EnvelopeT es m a -> EnvelopeT es m b
+  contramap f (EnvelopeT m) = EnvelopeT $ contramap (fmap f) m
 
 -- | This is 'pure' for 'EnvelopeT'.
 --
