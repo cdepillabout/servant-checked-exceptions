@@ -54,15 +54,19 @@ import Data.WorldPeace
   ( Contains
   , IsMember
   , OpenUnion
+  , ReturnX
+  , ToOpenProduct
   )
 
 import Servant.Checked.Exceptions.Internal.Envelope
   ( Envelope(ErrEnvelope, SuccEnvelope)
+  , catchesEnvelope
   , combineEnvelopes
   , eitherToEnvelope
   , emptyEnvelope
   , envelope
   , envelopeToEither
+  , errEnvelopeMatch
   , pureErrEnvelope
   , pureSuccEnvelope
   , relaxEnvelope
@@ -198,6 +202,142 @@ pureSuccEnvT = EnvelopeT . pureSuccEnvelope
 -- one of the error types.
 throwErrEnvT :: (Applicative m, IsMember e es) => e -> EnvelopeT es m a
 throwErrEnvT = EnvelopeT . pureErrEnvelope
+
+-- | Case analysis for 'EnvelopeT'.
+--
+-- ==== __Examples__
+--
+--  Here is an example of matching on a 'SuccEnvelope':
+--
+-- >>> let env = pure "hello" :: EnvelopeT '[Double, Int] Identity String
+-- >>> envelopeT (\_ -> Identity "not a String") Identity env
+-- Identity "hello"
+--
+-- Here is an example of matching on a 'ErrEnvelope':
+--
+-- >>> let double = 3.5 :: Double
+-- >>> let env' = throwErrEnvT double :: EnvelopeT '[Double, Int] Identity String
+-- >>> envelopeT (\_ -> Identity "not a String") Identity env'
+-- Identity "not a String"
+envelopeT :: Monad m => (OpenUnion es -> m c) -> (a -> m c) -> EnvelopeT es m a -> m c
+envelopeT errHandler succHandler (EnvelopeT m) = do
+  envel <- m
+  envelope errHandler succHandler envel
+
+-- | Slight simplification of 'envelopeT'.
+--
+-- ==== __Examples__
+--
+--  Here is an example of successfully matching:
+--
+-- >>> let env = pure "hello" :: EnvelopeT '[Double, Int] Identity String
+-- >>> fromEnvT (\_ -> Identity "not a String") env
+-- Identity "hello"
+--
+-- Here is an example of unsuccessfully matching:
+--
+-- >>> let double = 3.5 :: Double
+-- >>> let env' = throwErrEnvT double :: EnvelopeT '[Double, Int] Identity String
+-- >>> fromEnvT (\_ -> Identity "not a String") env'
+-- Identity "not a String"
+fromEnvT :: Monad m => (OpenUnion es -> m a) -> EnvelopeT es m a -> m a
+fromEnvT f = envelopeT f pure
+
+-- | Flipped version of 'fromEnvT'.
+fromEnvTOr :: Monad m => EnvelopeT es m a -> (OpenUnion es -> m a) -> m a
+fromEnvTOr = flip fromEnvT
+
+-- | Try to pull out a specific @e@ from an 'ErrEnvelope'.
+--
+-- ==== __Examples__
+--
+-- Successfully pull out an @e@:
+--
+-- >>> let double = 3.5 :: Double
+-- >>> let env = throwErrEnvT double :: EnvelopeT '[Double, Char] Identity ()
+-- >>> errEnvTMatch env :: Identity (Maybe Double)
+-- Identity (Just 3.5)
+--
+-- Unsuccessfully pull out an @e@:
+--
+-- >>> let env' = pure () :: EnvelopeT '[String, Double] Identity ()
+-- >>> errEnvTMatch env' :: Identity (Maybe Double)
+-- Identity Nothing
+errEnvTMatch
+  :: forall e es m a.
+     (Functor m, IsMember e es)
+  => EnvelopeT es m a
+  -> m (Maybe e)
+errEnvTMatch (EnvelopeT m) = fmap errEnvelopeMatch m
+
+-- | An alternate case anaylsis for an 'EnvelopeT'.  This method uses a tuple
+-- containing handlers for each potential value of the underlying 'Envelope'.
+-- This is somewhat similar to the 'Control.Exception.catches' function.
+--
+-- When working with an 'Envelope' with a large number of possible error types,
+-- it can be easier to use 'catchesEnvT' than 'envelopeT'.
+--
+-- ==== __Examples__
+--
+-- Here is an example of handling an 'SuccEnvelope' with two possible error values.
+-- Notice that a normal tuple is used:
+--
+-- >>> let env = pure 2.0 :: EnvelopeT '[Int, String] IO Double
+-- >>> let intHandler = (\int -> pure $ show int) :: Int -> IO String
+-- >>> let strHandler = (\str -> pure str) :: String -> IO String
+-- >>> let succHandler = (\dbl -> pure "got a double") :: Double -> IO String
+-- >>> catchesEnvT (intHandler, strHandler) succHandler env :: IO String
+-- "got a double"
+--
+-- Here is an example of handling an 'ErrEnvelope' with two possible error values.
+-- Notice that a normal tuple is used to hold the handlers:
+--
+-- >>> let env = throwErrEnvT (3 :: Int) :: EnvelopeT '[Int, String] Identity Double
+-- >>> let intHandler = (\int -> Identity $ show int) :: Int -> Identity String
+-- >>> let strHandler = (\str -> Identity str) :: String -> Identity String
+-- >>> let succHandler = (\dbl -> Identity "got a double") :: Double -> Identity String
+-- >>> catchesEnvT (intHandler, strHandler) succHandler env :: Identity String
+-- Identity "3"
+--
+-- Given an 'EnvelopeT' like @'EnvelopeT' \'['Int', 'String'] 'IO' 'Double'@,
+-- the type of 'catchesEnvT' becomes the following:
+--
+-- @
+--   'catchesEnvT'
+--     :: ('Int' -> 'IO' x, 'String' -> 'IO' x)
+--     -> ('Double' -> 'IO' x)
+--     -> 'EnvelopeT' \'['Int', 'String'] 'IO' 'Double'
+--     -> 'IO' x
+-- @
+--
+-- Here is an example of handling an 'ErrEnvelope' with three possible values.
+-- Notice how a 3-tuple is used to hold the handlers:
+--
+-- >>> let env = throwErrEnvT ("hi" :: String) :: EnvelopeT '[Int, String, Char] IO Double
+-- >>> let intHandler = (\int -> pure $ show int) :: Int -> IO String
+-- >>> let strHandler = (\str -> pure str) :: String -> IO String
+-- >>> let chrHandler = (\chr -> pure [chr]) :: Char -> IO String
+-- >>> let succHandler = (\dbl -> pure "got a double") :: Double -> IO String
+-- >>> catchesEnvT (intHandler, strHandler, chrHandler) succHandler env :: IO String
+-- "hi"
+--
+-- Given an 'Envelope' like @'EnvelopeT' \'['Int', 'String', 'Char'] 'IO' 'Double'@,
+-- the type of 'catchesEnvT' becomes the following:
+--
+-- @
+--   'catchesEnvT'
+--     :: ('Int' -> 'IO' x, 'String' -> 'IO' x, 'Char' -> 'IO' x)
+--     -> ('Double' -> 'IO' x)
+--     -> 'EnvelopeT' \'['Int', 'String', 'Char'] 'IO' 'Double'
+--     -> x
+-- @
+catchesEnvT
+  :: forall tuple es m a x
+   .  (Monad m, ToOpenProduct tuple (ReturnX (m x) es))
+  => tuple -> (a -> m x) -> EnvelopeT es m a -> m x
+catchesEnvT tuple a2mx (EnvelopeT m) = do
+  envel <- m
+  catchesEnvelope tuple a2mx envel
 
 -- | Convert an 'EnvelopeT' to an 'ExceptT'.
 envTToExceptT :: Functor m => EnvelopeT es m a -> ExceptT (OpenUnion es) m a
