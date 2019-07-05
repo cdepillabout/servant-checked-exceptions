@@ -11,7 +11,8 @@ packages:
 - 'servant-checked-exceptions-core'
 
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
-extra-deps: []
+extra-deps:
+    - ../world-peace
 
 # Override default flag values for local packages and extra-deps
 flags: {}

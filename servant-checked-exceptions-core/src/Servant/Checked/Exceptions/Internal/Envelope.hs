@@ -45,10 +45,16 @@ import Data.Aeson
   )
 import Data.Aeson.Types (Parser)
 import Data.Data (Data)
+import Data.Functor.Classes
+  ( Show1
+  , liftShowsPrec
+  , showsUnaryWith
+  )
 import Data.Semigroup (Semigroup((<>), stimes), stimesIdempotent)
 import Data.Typeable (Typeable)
 import Data.WorldPeace
-  ( IsMember
+  ( Contains
+  , IsMember
   , OpenUnion
   , ReturnX
   , ToOpenProduct
@@ -56,13 +62,12 @@ import Data.WorldPeace
   , catchesOpenUnion
   , openUnionLift
   , openUnionPrism
-  , Union(..)
+  , relaxOpenUnion
   )
 import GHC.Generics (Generic)
 
 import Servant.Checked.Exceptions.Internal.Prism
        (Iso, Prism, Prism', iso, preview, prism)
-import Servant.Checked.Exceptions.Internal.Util
 
 -- $setup
 -- >>> :set -XDataKinds
@@ -130,6 +135,18 @@ deriving instance (Ord (OpenUnion es), Ord a) => Ord (Envelope es a)
 deriving instance (Read (OpenUnion es), Read a) => Read (Envelope es a)
 deriving instance (Show (OpenUnion es), Show a) => Show (Envelope es a)
 deriving instance (Typeable (OpenUnion es), Typeable a) => Typeable (Envelope es a)
+
+instance (Show (OpenUnion es)) => Show1 (Envelope es) where
+  liftShowsPrec
+    :: (Int -> a -> ShowS)
+    -> ([a] -> ShowS)
+    -> Int
+    -> Envelope es a
+    -> ShowS
+  liftShowsPrec showA _ d (SuccEnvelope a) =
+    showsUnaryWith showA "SuccEnvelope" d a
+  liftShowsPrec _ _ d (ErrEnvelope es) =
+    showsUnaryWith showsPrec "ErrEnvelope" d es
 
 instance Applicative (Envelope es) where
   pure :: a -> Envelope es a
@@ -207,6 +224,48 @@ pureSuccEnvelope = pure . toSuccEnvelope
 envelope :: (OpenUnion es -> c) -> (a -> c) -> Envelope es a -> c
 envelope f _ (ErrEnvelope es) = f es
 envelope _ f (SuccEnvelope a) = f a
+
+-- | Change the errors type in an 'Envelope' to a larger set.
+--
+-- >>> let double = 3.5 :: Double
+-- >>> let env = toErrEnvelope double :: Envelope '[Double, Int] Char
+-- >>> relaxEnvelope env :: Envelope '[(), Double, String, Int] Char
+-- ErrEnvelope (Identity 3.5)
+relaxEnvelope :: Contains es1 es2 => Envelope es1 a -> Envelope es2 a
+relaxEnvelope (SuccEnvelope a) = SuccEnvelope a
+relaxEnvelope (ErrEnvelope es) = ErrEnvelope (relaxOpenUnion es)
+
+-- | Combine two 'Envelope's.  Generalize the set of errors to include the errors
+-- from both 'Envelope's.
+--
+-- >>> let env1 = toSuccEnvelope "hello" :: Envelope '[Double, Int] String
+-- >>> let env2 = toSuccEnvelope " world" :: Envelope '[Char] String
+-- >>> combineEnvelopes (<>) env1 env2 :: Envelope '[Double, Int, Char] String
+-- SuccEnvelope "hello world"
+--
+-- If either of the 'Envelope's is an 'ErrEnvelope', then return the 'ErrEnvelope'.
+--
+-- >>> let env3 = toErrEnvelope "some err" :: Envelope '[String, Double] Int
+-- >>> let env4 = toSuccEnvelope 1 :: Envelope '[Char] Int
+-- >>> combineEnvelopes (+) env3 env4 :: Envelope '[String, Double, Char] Int
+-- ErrEnvelope (Identity "some err")
+--
+-- >>> let env5 = toSuccEnvelope "hello" :: Envelope '[Char] String
+-- >>> let env6 = toErrEnvelope 3.5 :: Envelope '[(), Double] String
+-- >>> combineEnvelopes (<>) env5 env6 :: Envelope '[Char, (), Double] String
+-- ErrEnvelope (Identity 3.5)
+--
+-- If both of the 'Envelope's is an 'ErrEnvelope', then short-circuit and only
+-- return the first 'ErrEnvelope'.
+--
+-- >>> let env7 = toErrEnvelope 3.5 :: Envelope '[(), Double] String
+-- >>> let env8 = toErrEnvelope 'x' :: Envelope '[Int, Char] String
+-- >>> combineEnvelopes (<>) env7 env8 :: Envelope '[(), Double, Int, Char] String
+-- ErrEnvelope (Identity 3.5)
+combineEnvelopes :: (Contains es1 fullEs, Contains es2 fullEs) => (a -> b -> c) -> Envelope es1 a -> Envelope es2 b -> Envelope fullEs c
+combineEnvelopes f (SuccEnvelope a) (SuccEnvelope b) = SuccEnvelope (f a b)
+combineEnvelopes _ (ErrEnvelope es) _ = ErrEnvelope (relaxOpenUnion es)
+combineEnvelopes _ _ (ErrEnvelope es) = ErrEnvelope (relaxOpenUnion es)
 
 -- | Unwrap an 'Envelope' that cannot contain an error.
 --
