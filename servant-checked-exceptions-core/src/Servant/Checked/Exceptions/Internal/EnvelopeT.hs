@@ -6,11 +6,14 @@
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 {- |
@@ -32,9 +35,13 @@ short-circuiting monad transformer.
 
 module Servant.Checked.Exceptions.Internal.EnvelopeT where
 
-import Control.Monad.Except (ExceptT(ExceptT))
+import Control.Monad.Except (ExceptT(ExceptT), MonadError(throwError, catchError))
 import Control.Monad.IO.Class (MonadIO(liftIO))
+import Control.Monad.Reader (MonadReader, ask, local, reader)
+import Control.Monad.RWS (MonadRWS)
+import Control.Monad.State (MonadState, get, put, state)
 import Control.Monad.Trans.Class (MonadTrans(lift))
+import Control.Monad.Writer (MonadWriter, listen, pass, tell, writer)
 import Data.Functor.Classes
   ( Show1
   , liftShowList
@@ -133,6 +140,46 @@ instance (Traversable m) => Traversable (EnvelopeT es m) where
 instance Contravariant m => Contravariant (EnvelopeT es m) where
   contramap :: (b -> a) -> EnvelopeT es m a -> EnvelopeT es m b
   contramap f (EnvelopeT m) = EnvelopeT $ contramap (fmap f) m
+
+instance MonadRWS r w s m => MonadRWS r w s (EnvelopeT es m)
+
+instance MonadError error m => MonadError error (EnvelopeT es m) where
+  throwError = EnvelopeT . throwError
+
+  catchError
+    :: forall a
+     . EnvelopeT es m a
+    -> (error -> EnvelopeT es m a)
+    -> EnvelopeT es m a
+  catchError (EnvelopeT m) handler = EnvelopeT $ catchError m innerRunner
+    where
+      innerRunner :: error -> m (Envelope es a)
+      innerRunner = runEnvelopeT . handler
+
+instance MonadReader r m => MonadReader r (EnvelopeT es m) where
+  ask = lift ask
+  local f (EnvelopeT m) = EnvelopeT (local f m)
+  reader = lift . reader
+
+instance MonadState s m => MonadState s (EnvelopeT es m) where
+  get = lift get
+  put = lift . put
+  state = lift . state
+
+instance MonadWriter w m => MonadWriter w (EnvelopeT es m) where
+  writer = lift . writer
+  tell = lift . tell
+  listen (EnvelopeT m) =
+    EnvelopeT $ do
+      (envelopeA, w) <- listen m
+      pure $ fmap (,w) envelopeA
+  pass (EnvelopeT m) =
+    EnvelopeT $ do
+      envel <- m
+      pass . pure $
+        case envel of
+          SuccEnvelope (a, f) -> (SuccEnvelope a, f)
+          ErrEnvelope es -> (ErrEnvelope es, id)
 
 -- | This is 'pure' for 'EnvelopeT'.
 --
