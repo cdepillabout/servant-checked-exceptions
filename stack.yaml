@@ -43,3 +43,7 @@ extra-package-dbs: []
 # This has been disabled because of the following exchange:
 # https://github.com/cdepillabout/pretty-simple/pull/1#issuecomment-272706215
 #pvp-bounds: both
+
+nix:
+  packages:
+    - zlib
