@@ -461,7 +461,39 @@ bindEnvT (EnvelopeT m) f =
         let fullEs = relaxOpenUnion u
         in pure $ ErrEnvelope fullEs
 
--- TODO: Documentation
+-- | This function allows you to try to remove individual error types from an
+-- 'EnvelopeT'.
+--
+-- This can be used to handle only certain error types in an 'Envelope',
+-- instead of having to handle all of them at the same time.  This can be more
+-- convenient than a function like 'catchesEnvT'.
+--
+-- ==== __Examples__
+--
+-- Pulling out an error in an 'EnvelopeT':
+--
+-- >>> let env1 = throwErrEnvT "hello" :: EnvelopeT '[String, Double] Identity Float
+-- >>> envTRemove env1 :: EnvelopeT '[Double] Identity (Either Float String)
+-- EnvelopeT (Identity (SuccEnvelope (Right "hello")))
+--
+-- Failing to pull out an error in an 'Envelope':
+--
+-- >>> let env2 = throwErrEnvT (3.5 :: Double) :: EnvelopeT '[String, Double] Identity Float
+-- >>> envTRemove env2 :: EnvelopeT '[Double] Identity (Either Float String)
+-- EnvelopeT (Identity (ErrEnvelope (Identity 3.5)))
+--
+-- Note that if you have an 'Envelope' with multiple errors of the same type,
+-- they will all be handled at the same time:
+--
+-- >>> let env3 = throwErrEnvT (3.5 :: Double) :: EnvelopeT '[String, Double, Char, Double] Identity Float
+-- >>> envTRemove env3 :: EnvelopeT '[String, Char] Identity (Either Float Double)
+-- EnvelopeT (Identity (SuccEnvelope (Right 3.5)))
+--
+-- 'SuccEnvelope' gets passed through as expected:
+--
+-- >>> let env4 = pureSuccEnvT 3.5 :: EnvelopeT '[String, Double] Identity Float
+-- >>> envTRemove env4 :: EnvelopeT '[Double] Identity (Either Float String)
+-- EnvelopeT (Identity (SuccEnvelope (Left 3.5)))
 envTRemove
   :: forall e es m a
    . (ElemRemove e es, Functor m)
