@@ -58,6 +58,7 @@ import Data.WorldPeace
   , Remove
   , ReturnX
   , ToOpenProduct
+  , relaxOpenUnion
   )
 
 import Servant.Checked.Exceptions.Internal.Envelope
@@ -360,6 +361,8 @@ emptyEnvT (EnvelopeT m) = fmap emptyEnvelope m
 
 -- | Change the errors type in an 'EnvelopeT' to a larger set.
 --
+-- ==== __Examples__
+--
 -- >>> let double = 3.5 :: Double
 -- >>> let envT1 = throwErrEnvT double :: EnvelopeT '[Int, Double] Identity Float
 -- >>> relaxEnvT envT1 :: EnvelopeT '[Char, Int, String, Double] Identity Float
@@ -372,23 +375,25 @@ relaxEnvT :: (Functor m, Contains es1 es2) => EnvelopeT es1 m a -> EnvelopeT es2
 relaxEnvT (EnvelopeT m) = EnvelopeT $ fmap relaxEnvelope m
 
 -- | Combine two 'EnvelopeT's.  Generalize the set of errors to include the errors
--- from both 'EnvelopeT's.
+-- from both 'EnvelopeT's. Similar to 'liftA2' but more general.
+--
+-- ==== __Examples__
 --
 -- >>> let env1 = pure "hello" :: EnvelopeT '[Double, Int] Identity String
 -- >>> let env2 = pure " world" :: EnvelopeT '[Char]  Identity String
--- >>> combineEnvT (<>) env1 env2 :: EnvelopeT '[Double, Int, Char] Identity String
+-- >>> liftA2EnvT (<>) env1 env2 :: EnvelopeT '[Double, Int, Char] Identity String
 -- EnvelopeT (Identity (SuccEnvelope "hello world"))
 --
 -- If either of the 'Envelope's is an 'ErrEnvelope', then return the 'ErrEnvelope'.
 --
 -- >>> let env3 = throwErrEnvT "some err" :: EnvelopeT '[String, Double] Identity Int
 -- >>> let env4 = pure 1 :: EnvelopeT '[Char]  Identity Int
--- >>> combineEnvT (+) env3 env4 :: EnvelopeT '[String, Double, Char] Identity Int
+-- >>> liftA2EnvT (+) env3 env4 :: EnvelopeT '[String, Double, Char] Identity Int
 -- EnvelopeT (Identity (ErrEnvelope (Identity "some err")))
 --
 -- >>> let env5 = pure "hello" :: EnvelopeT '[Char] Identity String
 -- >>> let env6 = throwErrEnvT 3.5 :: EnvelopeT '[(), Double] Identity String
--- >>> combineEnvT (<>) env5 env6 :: EnvelopeT '[Char, (), Double] Identity String
+-- >>> liftA2EnvT (<>) env5 env6 :: EnvelopeT '[Char, (), Double] Identity String
 -- EnvelopeT (Identity (ErrEnvelope (Identity 3.5)))
 --
 -- If both of the 'EnvelopeT's is an 'ErrEnvelope', then short-circuit and only
@@ -396,18 +401,50 @@ relaxEnvT (EnvelopeT m) = EnvelopeT $ fmap relaxEnvelope m
 --
 -- >>> let env7 = throwErrEnvT 4.5 :: EnvelopeT '[(), Double] Identity String
 -- >>> let env8 = throwErrEnvT 'x' :: EnvelopeT '[Int, Char] Identity String
--- >>> combineEnvT (<>) env7 env8 :: EnvelopeT '[(), Double, Int, Char] Identity String
+-- >>> liftA2EnvT (<>) env7 env8 :: EnvelopeT '[(), Double, Int, Char] Identity String
 -- EnvelopeT (Identity (ErrEnvelope (Identity 4.5)))
-combineEnvT
+liftA2EnvT
   :: (Contains es1 fullEs, Contains es2 fullEs, Applicative m)
   => (a -> b -> c)
   -> EnvelopeT es1 m a
   -> EnvelopeT es2 m b
   -> EnvelopeT fullEs m c
-combineEnvT f (EnvelopeT m) (EnvelopeT n) =
+liftA2EnvT f (EnvelopeT m) (EnvelopeT n) =
   EnvelopeT $ liftA2Envelope f <$> m <*> n
--- TODO: Rename this to liftA2EnvT?
 
+-- | This is like 'liftA2EnvT' but for monadic bind ('>>=').
+--
+-- This allows you to bind on 'EnvelopeT's that contain different errors.
+--
+-- The resulting 'EnvelopeT' must have a superset of the errors in two input
+-- 'EnvelopeT's.
+--
+-- ==== __Examples__
+--
+-- >>> let env1 = pure "hello" :: EnvelopeT '[Double, Int] Identity String
+-- >>> let f1 str = pure (length str) :: EnvelopeT '[Char] Identity Int
+-- >>> bindEnvT env1 f1 :: EnvelopeT '[Double, Int, Char] Identity Int
+-- EnvelopeT (Identity (SuccEnvelope 5))
+--
+-- If either of the 'EnvelopeT's holds an 'ErrEnvelope', then return the 'ErrEnvelope'.
+--
+-- >>> let env2 = throwErrEnvT "some err" :: EnvelopeT '[String, Double] Identity Int
+-- >>> let f2 i = pureSuccEnvT (i + 1) :: EnvelopeT '[Char] Identity Int
+-- >>> bindEnvT env2 f2 :: EnvelopeT '[String, Double, Char] Identity Int
+-- EnvelopeT (Identity (ErrEnvelope (Identity "some err")))
+--
+-- >>> let env3 = pureSuccEnvT "hello" :: EnvelopeT '[Char] Identity String
+-- >>> let f3 _ = throwErrEnvT 3.5 :: EnvelopeT '[(), Double] Identity Int
+-- >>> bindEnvT env3 f3 :: EnvelopeT '[Char, (), Double] Identity Int
+-- EnvelopeT (Identity (ErrEnvelope (Identity 3.5)))
+--
+-- If both of the 'Envelope's is an 'ErrEnvelope', then short-circuit and only
+-- return the first 'ErrEnvelope'.
+--
+-- >>> let env4 = throwErrEnvT 3.5 :: EnvelopeT '[(), Double] Maybe String
+-- >>> let f4 _ = throwErrEnvT 'x' :: EnvelopeT '[Int, Char] Maybe String
+-- >>> bindEnvT env4 f4 :: EnvelopeT '[Char, (), Double, Int] Maybe String
+-- EnvelopeT (Just (ErrEnvelope (Identity 3.5)))
 bindEnvT
   :: (Contains es1 fullEs, Contains es2 fullEs, Monad m)
   => EnvelopeT es1 m a
@@ -420,7 +457,9 @@ bindEnvT (EnvelopeT m) f =
       SuccEnvelope a ->
         let x = f a
         in runEnvelopeT $ relaxEnvT x
-      ErrEnvelope u -> undefined
+      ErrEnvelope u ->
+        let fullEs = relaxOpenUnion u
+        in pure $ ErrEnvelope fullEs
 
 -- TODO: Documentation
 envTRemove

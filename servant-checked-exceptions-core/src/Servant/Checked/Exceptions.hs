@@ -179,10 +179,12 @@ module Servant.Checked.Exceptions
   , errEnvTMatch
   , catchesEnvT
   , emptyEnvT
-  , relaxEnvT
-  , combineEnvT
   , envTRemove
   , envTHandle
+  -- ** Other 'EnvelopeT' combinators
+  , relaxEnvT
+  , liftA2EnvT
+  , bindEnvT
   -- ** 'Envelope' and 'ExceptT'
   , envTToExceptT
   , exceptTToEnvT

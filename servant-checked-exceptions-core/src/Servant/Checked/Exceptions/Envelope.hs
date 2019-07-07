@@ -42,10 +42,12 @@ module Servant.Checked.Exceptions.Envelope (
   , errEnvTMatch
   , catchesEnvT
   , emptyEnvT
-  , relaxEnvT
-  , combineEnvT
   , envTRemove
   , envTHandle
+  -- ** Other EnvelopeT combinators
+  , relaxEnvT
+  , liftA2EnvT
+  , bindEnvT
   -- ** ExceptT
   , envTToExceptT
   , exceptTToEnvT
