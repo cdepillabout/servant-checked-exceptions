@@ -52,8 +52,10 @@ import Data.Functor.Classes
 import Data.Functor.Contravariant (Contravariant(contramap))
 import Data.WorldPeace
   ( Contains
+  , ElemRemove
   , IsMember
   , OpenUnion
+  , Remove
   , ReturnX
   , ToOpenProduct
   )
@@ -61,10 +63,11 @@ import Data.WorldPeace
 import Servant.Checked.Exceptions.Internal.Envelope
   ( Envelope(ErrEnvelope, SuccEnvelope)
   , catchesEnvelope
-  , combineEnvelopes
+  , liftA2Envelope
   , eitherToEnvelope
   , emptyEnvelope
   , envelope
+  , envelopeRemove
   , envelopeToEither
   , errEnvelopeMatch
   , pureErrEnvelope
@@ -401,4 +404,44 @@ combineEnvT
   -> EnvelopeT es1 m a
   -> EnvelopeT es2 m b
   -> EnvelopeT fullEs m c
-combineEnvT f (EnvelopeT m) (EnvelopeT n) = EnvelopeT $ combineEnvelopes f <$> m <*> n
+combineEnvT f (EnvelopeT m) (EnvelopeT n) =
+  EnvelopeT $ liftA2Envelope f <$> m <*> n
+-- TODO: Rename this to liftA2EnvT?
+
+bindEnvT
+  :: (Contains es1 fullEs, Contains es2 fullEs, Monad m)
+  => EnvelopeT es1 m a
+  -> (a -> EnvelopeT es2 m b)
+  -> EnvelopeT fullEs m b
+bindEnvT (EnvelopeT m) f =
+  EnvelopeT $ do
+    envel1 <- m
+    case envel1 of
+      SuccEnvelope a ->
+        let x = f a
+        in runEnvelopeT $ relaxEnvT x
+      ErrEnvelope u -> undefined
+
+-- TODO: Documentation
+envTRemove
+  :: forall e es m a
+   . (ElemRemove e es, Functor m)
+  => EnvelopeT es m a
+  -> EnvelopeT (Remove e es) m (Either a e)
+envTRemove (EnvelopeT m) = EnvelopeT $ fmap go m
+  where
+  go :: Envelope es a -> Envelope (Remove e es) (Either a e)
+  go envel =
+    case envelopeRemove envel of
+      Right e -> SuccEnvelope (Right e)
+      Left envel -> fmap Left envel
+
+envTHandle
+  :: (ElemRemove e es, Monad m)
+  => (a -> EnvelopeT (Remove e es) m x)
+  -> (e -> EnvelopeT (Remove e es) m x)
+  -> EnvelopeT es m a
+  -> EnvelopeT (Remove e es) m x
+envTHandle aHandler eHandler envT = do
+  aOrE <- envTRemove envT
+  either aHandler eHandler aOrE

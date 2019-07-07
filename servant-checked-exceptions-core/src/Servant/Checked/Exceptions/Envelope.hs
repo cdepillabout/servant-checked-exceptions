@@ -16,6 +16,12 @@ module Servant.Checked.Exceptions.Envelope (
   , fromEnvelopeOrM
   , errEnvelopeMatch
   , catchesEnvelope
+  , envelopeRemove
+  , envelopeHandle
+  -- ** Other Envelope combinators
+  , relaxEnvelope
+  , liftA2Envelope
+  , bindEnvelope
   -- ** Optics
   , _SuccEnvelope
   , _ErrEnvelope
@@ -29,6 +35,17 @@ module Servant.Checked.Exceptions.Envelope (
   -- ** EnvelopeT constructors
   , pureSuccEnvT
   , throwErrEnvT
+  -- ** EnvelopeT destructors
+  , envelopeT
+  , fromEnvT
+  , fromEnvTOr
+  , errEnvTMatch
+  , catchesEnvT
+  , emptyEnvT
+  , relaxEnvT
+  , combineEnvT
+  , envTRemove
+  , envTHandle
   -- ** ExceptT
   , envTToExceptT
   , exceptTToEnvT
