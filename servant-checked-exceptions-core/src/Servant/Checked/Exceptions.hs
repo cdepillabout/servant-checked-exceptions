@@ -180,7 +180,6 @@ module Servant.Checked.Exceptions
   , catchesEnvT
   , emptyEnvT
   , envTRemove
-  , envTHandle
   -- ** Other 'EnvelopeT' combinators
   , relaxEnvT
   , liftA2EnvT

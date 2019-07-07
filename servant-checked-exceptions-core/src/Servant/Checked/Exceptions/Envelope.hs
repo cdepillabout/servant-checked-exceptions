@@ -43,7 +43,6 @@ module Servant.Checked.Exceptions.Envelope (
   , catchesEnvT
   , emptyEnvT
   , envTRemove
-  , envTHandle
   -- ** Other EnvelopeT combinators
   , relaxEnvT
   , liftA2EnvT

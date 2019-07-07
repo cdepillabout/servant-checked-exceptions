@@ -476,13 +476,13 @@ bindEnvT (EnvelopeT m) f =
 -- >>> envTRemove env1 :: EnvelopeT '[Double] Identity (Either Float String)
 -- EnvelopeT (Identity (SuccEnvelope (Right "hello")))
 --
--- Failing to pull out an error in an 'Envelope':
+-- Failing to pull out an error in an 'EnvelopeT':
 --
 -- >>> let env2 = throwErrEnvT (3.5 :: Double) :: EnvelopeT '[String, Double] Identity Float
 -- >>> envTRemove env2 :: EnvelopeT '[Double] Identity (Either Float String)
 -- EnvelopeT (Identity (ErrEnvelope (Identity 3.5)))
 --
--- Note that if you have an 'Envelope' with multiple errors of the same type,
+-- Note that if you have an 'EnvelopeT' with multiple errors of the same type,
 -- they will all be handled at the same time:
 --
 -- >>> let env3 = throwErrEnvT (3.5 :: Double) :: EnvelopeT '[String, Double, Char, Double] Identity Float
@@ -506,13 +506,3 @@ envTRemove (EnvelopeT m) = EnvelopeT $ fmap go m
     case envelopeRemove envel of
       Right e -> SuccEnvelope (Right e)
       Left envel -> fmap Left envel
-
-envTHandle
-  :: (ElemRemove e es, Monad m)
-  => (a -> EnvelopeT (Remove e es) m x)
-  -> (e -> EnvelopeT (Remove e es) m x)
-  -> EnvelopeT es m a
-  -> EnvelopeT (Remove e es) m x
-envTHandle aHandler eHandler envT = do
-  aOrE <- envTRemove envT
-  either aHandler eHandler aOrE
