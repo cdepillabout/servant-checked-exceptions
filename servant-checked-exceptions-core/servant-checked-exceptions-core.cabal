@@ -44,7 +44,7 @@ library
                      , servant >= 0.12
                      , servant-docs >= 0.10
                      , text
-                     , world-peace
+                     , world-peace >= 1.0.0.0
   default-language:    Haskell2010
   ghc-options:         -Wall -fwarn-incomplete-uni-patterns -fwarn-incomplete-record-updates -fwarn-monomorphism-restriction
   other-extensions:    QuasiQuotes
