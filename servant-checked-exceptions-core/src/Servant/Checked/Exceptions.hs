@@ -86,6 +86,14 @@ and
 <https://github.com/cdepillabout/servant-checked-exceptions/blob/master/example/Docs.hs documentation>.
 The <https://github.com/cdepillabout/servant-checked-exceptions README.md>
 shows how to compile and run the examples.
+
+There is also an 'EnvelopeT' monad transformer.  'Envelope' and 'EnvelopeT'
+have a similar relationship to 'Either' and 'ExceptT'.
+
+The following is an example of how 'EnvelopeT' can be used:
+
+<https://github.com/cdepillabout/servant-checked-exceptions/blob/master/example/EnvelopeT.hs EnvelopeT example>
+
 -}
 
 module Servant.Checked.Exceptions

@@ -85,6 +85,28 @@ executable servant-checked-exceptions-example-server
   else
     buildable:         False
 
+executable servant-checked-exceptions-example-envelopet
+  main-is:             EnvelopeT.hs
+  other-modules:       Api
+  hs-source-dirs:      example
+  build-depends:       base
+                     , aeson
+                     , http-api-data
+                     , http-types
+                     , servant
+                     , servant-checked-exceptions
+                     , servant-server
+                     , text
+                     , wai
+                     , warp
+  default-language:    Haskell2010
+  ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
+
+  if flag(buildexample)
+    buildable:         True
+  else
+    buildable:         False
+
 test-suite servant-checked-exceptions-test
   type:                exitcode-stdio-1.0
   main-is:             Spec.hs
