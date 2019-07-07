@@ -35,7 +35,8 @@ library
   build-depends:       base >= 4.9 && < 5
                      , aeson
                      , bytestring
-                     , contravariant >= 1.5 -- needed for the Data.Functor.Contravariant module in GHC < 8.6
+                       -- contravariant is needed for the Data.Functor.Contravariant module in GHC < 8.6
+                     , contravariant >= 1.5
                      , http-media
                      , http-types
                      , mtl
