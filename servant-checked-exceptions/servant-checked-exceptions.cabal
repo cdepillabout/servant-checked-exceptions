@@ -1,5 +1,5 @@
 name:                servant-checked-exceptions
-version:             2.1.0.0
+version:             2.2.0.0
 synopsis:            Checked exceptions for Servant APIs.
 description:         Please see <https://github.com/cdepillabout/servant-checked-exceptions#readme README.md>.
 homepage:            https://github.com/cdepillabout/servant-checked-exceptions
@@ -35,7 +35,7 @@ library
                      , servant-client-core >= 0.16
                      , servant-server >= 0.16
                      , wai
-                     , world-peace
+                     , world-peace >= 1.0.0.0
   default-language:    Haskell2010
   ghc-options:         -Wall -fwarn-incomplete-uni-patterns -fwarn-incomplete-record-updates -fwarn-monomorphism-restriction
   other-extensions:    QuasiQuotes
@@ -65,6 +65,28 @@ executable servant-checked-exceptions-example-client
 
 executable servant-checked-exceptions-example-server
   main-is:             Server.hs
+  other-modules:       Api
+  hs-source-dirs:      example
+  build-depends:       base
+                     , aeson
+                     , http-api-data
+                     , http-types
+                     , servant
+                     , servant-checked-exceptions
+                     , servant-server
+                     , text
+                     , wai
+                     , warp
+  default-language:    Haskell2010
+  ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
+
+  if flag(buildexample)
+    buildable:         True
+  else
+    buildable:         False
+
+executable servant-checked-exceptions-example-envelopet
+  main-is:             EnvelopeT.hs
   other-modules:       Api
   hs-source-dirs:      example
   build-depends:       base

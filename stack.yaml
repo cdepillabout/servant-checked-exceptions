@@ -1,6 +1,8 @@
 # For more information, see: http://docs.haskellstack.org/en/stable/yaml_configuration.html
 
 # Specifies the GHC version and set of packages available (e.g., lts-3.5, nightly-2015-09-21, ghc-7.10.2)
+#
+# nightly is used here so we get servant-0.16.
 resolver: nightly-2019-04-05
 
 # Local packages, usually specified by relative directory name
@@ -9,7 +11,8 @@ packages:
 - 'servant-checked-exceptions-core'
 
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
-extra-deps: []
+extra-deps:
+    - world-peace-1.0.0.0
 
 # Override default flag values for local packages and extra-deps
 flags: {}
@@ -40,3 +43,7 @@ extra-package-dbs: []
 # This has been disabled because of the following exchange:
 # https://github.com/cdepillabout/pretty-simple/pull/1#issuecomment-272706215
 #pvp-bounds: both
+
+nix:
+  packages:
+    - zlib

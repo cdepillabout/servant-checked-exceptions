@@ -86,6 +86,14 @@ and
 <https://github.com/cdepillabout/servant-checked-exceptions/blob/master/example/Docs.hs documentation>.
 The <https://github.com/cdepillabout/servant-checked-exceptions README.md>
 shows how to compile and run the examples.
+
+There is also an 'EnvelopeT' monad transformer.  'Envelope' and 'EnvelopeT'
+have a similar relationship to 'Either' and 'ExceptT'.
+
+The following is an example of how 'EnvelopeT' can be used:
+
+<https://github.com/cdepillabout/servant-checked-exceptions/blob/master/example/EnvelopeT.hs EnvelopeT example>
+
 -}
 
 module Servant.Checked.Exceptions
@@ -152,6 +160,12 @@ module Servant.Checked.Exceptions
   , fromEnvelopeOrM
   , errEnvelopeMatch
   , catchesEnvelope
+  , envelopeRemove
+  , envelopeHandle
+  -- ** Other 'Envelope' combinators
+  , relaxEnvelope
+  , liftA2Envelope
+  , bindEnvelope
   -- *** 'Envelope' optics
   , _SuccEnvelope
   , _ErrEnvelope
@@ -160,18 +174,35 @@ module Servant.Checked.Exceptions
   , envelopeToEither
   , eitherToEnvelope
   , isoEnvelopeEither
+  -- * 'EnvelopeT' short-circuiting monad transformer
+  , EnvelopeT(..)
+  -- ** 'EnvelopeT' helper functions
+  -- *** 'EnvelopeT' constructors
+  , pureSuccEnvT
+  , throwErrEnvT
+  -- ** 'EnvelopeT' destructors
+  , envelopeT
+  , fromEnvT
+  , fromEnvTOr
+  , errEnvTMatch
+  , catchesEnvT
+  , emptyEnvT
+  , envTRemove
+  -- ** Other 'EnvelopeT' combinators
+  , relaxEnvT
+  , liftA2EnvT
+  , bindEnvT
+  -- ** 'Envelope' and 'ExceptT'
+  , envTToExceptT
+  , exceptTToEnvT
   -- * Re-exported modules
   -- | "Data.WorldPeace" exports the 'OpenUnion' type as well as other
   -- combinators.  It also exports the 'OpenProduct' type and 'ToProduct' type
   -- class used by some of the functions above.
   , module Data.WorldPeace
-  , module Servant.Checked.Exceptions.Internal.Servant.Docs
   ) where
 
 import Data.WorldPeace
 import Network.HTTP.Types (Status)
 
-import Servant.Checked.Exceptions.Internal.Envelope
-import Servant.Checked.Exceptions.Internal.Servant.API
-import Servant.Checked.Exceptions.Internal.Servant.Docs
-import Servant.Checked.Exceptions.Internal.Verbs
+import Servant.Checked.Exceptions.Internal

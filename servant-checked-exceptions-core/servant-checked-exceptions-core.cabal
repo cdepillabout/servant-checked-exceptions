@@ -1,5 +1,5 @@
 name:                servant-checked-exceptions-core
-version:             2.1.0.0
+version:             2.2.0.0
 synopsis:            Checked exceptions for Servant APIs.
 description:         Please see <https://github.com/cdepillabout/servant-checked-exceptions#readme README.md>.
 homepage:            https://github.com/cdepillabout/servant-checked-exceptions
@@ -25,6 +25,7 @@ library
                      , Servant.Checked.Exceptions.Verbs
                      , Servant.Checked.Exceptions.Internal
                      , Servant.Checked.Exceptions.Internal.Envelope
+                     , Servant.Checked.Exceptions.Internal.EnvelopeT
                      , Servant.Checked.Exceptions.Internal.Prism
                      , Servant.Checked.Exceptions.Internal.Servant
                      , Servant.Checked.Exceptions.Internal.Servant.API
@@ -34,14 +35,18 @@ library
   build-depends:       base >= 4.9 && < 5
                      , aeson
                      , bytestring
+                       -- contravariant is needed for the Data.Functor.Contravariant module in GHC < 8.6
+                     , contravariant >= 1.5
                      , http-media
                      , http-types
+                     , mtl
                      , profunctors
                      , tagged
+                     , transformers
                      , servant >= 0.12
                      , servant-docs >= 0.10
                      , text
-                     , world-peace
+                     , world-peace >= 1.0.0.0
   default-language:    Haskell2010
   ghc-options:         -Wall -fwarn-incomplete-uni-patterns -fwarn-incomplete-record-updates -fwarn-monomorphism-restriction
   other-extensions:    QuasiQuotes
