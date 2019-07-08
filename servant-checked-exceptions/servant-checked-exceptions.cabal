@@ -30,7 +30,7 @@ library
                      , bytestring
                      , http-types
                      , servant >= 0.16
-                     , servant-checked-exceptions-core
+                     , servant-checked-exceptions-core >= 2.2.0.0
                      , servant-client >= 0.16
                      , servant-client-core >= 0.16
                      , servant-server >= 0.16
