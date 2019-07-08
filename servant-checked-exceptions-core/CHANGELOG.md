@@ -1,3 +1,17 @@
+## 2.2.0.0
+
+*   Add the `EnvelopeT` monad transformer. [#32]
+
+*   Add a few combinators for `Envelope`:
+
+        - `envelopeRemove`
+        - `envelopeHandle`
+        - `relaxEnvelope`
+        - `liftA2Envelope`
+        - `bindEnvelope`
+
+    [#32]
+
 ## 2.1.0.0
 
 *   Add support for servant-0.16 and remove support for all previous version of
