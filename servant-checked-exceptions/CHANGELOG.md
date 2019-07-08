@@ -4,11 +4,11 @@
 
 *   Add a few combinators for `Envelope`:
 
-        - `envelopeRemove`
-        - `envelopeHandle`
-        - `relaxEnvelope`
-        - `liftA2Envelope`
-        - `bindEnvelope`
+    - `envelopeRemove`
+    - `envelopeHandle`
+    - `relaxEnvelope`
+    - `liftA2Envelope`
+    - `bindEnvelope`
 
     [#32]
 
