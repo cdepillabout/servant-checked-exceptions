@@ -87,10 +87,10 @@ different `Envelope` used in a handler.
 
 ## Example
 
-This repository contains an [example](example/) of using
-`servant-checked-exceptions`.  This includes an [api](example/Api.hs),
-[server](example/Server.hs), [client](example/Client.hs), and
-[documentation](example/Docs.hs).
+This repository contains an [example](servant-checked-exceptions/example/) of using
+`servant-checked-exceptions`.  This includes an [api](servant-checked-exceptions/example/Api.hs),
+[server](servant-checked-exceptions/example/Server.hs), [client](servant-checked-exceptions/example/Client.hs), and
+[documentation](servant-checked-exceptions-core/example/Docs.hs).
 
 Below I show how to compile and run these examples.
 
@@ -99,7 +99,7 @@ Below I show how to compile and run these examples.
 The examples can be compiled by using the `buildexample` flag:
 
 ```sh
-$ stack build --flag servant-checked-exceptions:buildexample
+$ stack build --flag servant-checked-exceptions-core:buildexample --flag servant-checked-exceptions:buildexample
 ```
 
 This creates three executables.  A server, a client, and a documentaiton
@@ -178,7 +178,7 @@ Success: good
 The documentation generator will generate documentation for the api in Markdown:
 
 ```sh
-$ stack exec -- servant-checked-exceptions-example-docs
+$ stack exec -- servant-checked-exceptions-core-example-docs
 ```
 
 Here is a small example of the documentation that will be generated for the lax
