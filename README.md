@@ -220,6 +220,14 @@ and `servant-server`. This can be useful if you are writing an API meant to be
 shared with ghcjs and run in a browser, where these dependencies aren't
 available.
 
+## Limitations
+
+Currently, `servant-client` only treats HTTP responses as successful if they
+have a status code of 2XX.  This means that any non-2XX errors thrown by
+`servant-checked-exceptions` don't get parsed into a typed `Envelope` as
+expected, but raised as a Servant `ClientError`.  For more information, see
+[issue #27](https://github.com/cdepillabout/servant-checked-exceptions/issues/27).
+
 ## Maintainers
 
 - [![Maintainer: cdepillabout](https://img.shields.io/badge/maintainer-cdepillabout-lightgrey.svg)](http://github.com/cdepillabout)
