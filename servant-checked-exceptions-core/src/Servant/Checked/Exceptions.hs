@@ -148,6 +148,7 @@ module Servant.Checked.Exceptions
   , GetPartialContentWithErr
   -- * 'Envelope' response wrapper
   , Envelope(..)
+  , FlatEnvelope(..)
   -- ** 'Envelope' helper functions
   -- *** 'Envelope' constructors
   , toSuccEnvelope
