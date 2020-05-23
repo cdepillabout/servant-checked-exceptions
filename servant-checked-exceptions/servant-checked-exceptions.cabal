@@ -107,6 +107,32 @@ executable servant-checked-exceptions-example-envelopet
   else
     buildable:         False
 
+executable servant-checked-exceptions-example-customenvelope
+  main-is:             CustomEnvelope.hs
+  other-modules:       Api
+  hs-source-dirs:      example
+  build-depends:       base
+                     , aeson
+                     , http-api-data
+                     , http-client
+                     , http-types
+                     , optparse-applicative
+                     , servant
+                     , servant-checked-exceptions
+                     , servant-client >= 0.13
+                     , servant-docs
+                     , servant-server
+                     , text
+                     , wai
+                     , warp
+  default-language:    Haskell2010
+  ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
+
+  if flag(buildexample)
+    buildable:         True
+  else
+    buildable:         False
+
 test-suite servant-checked-exceptions-test
   type:                exitcode-stdio-1.0
   main-is:             Spec.hs
