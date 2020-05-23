@@ -41,11 +41,9 @@ import Servant.Docs
         ToSample(toSamples))
 import Servant.Docs.Internal (apiEndpoints, respBody, response)
 
-import Servant.Checked.Exceptions.Internal.Envelope
-       (Envelope, toErrEnvelope, toSuccEnvelope)
 import Servant.Checked.Exceptions.Internal.Prism ((<>~))
 import Servant.Checked.Exceptions.Internal.Servant.API
-       (NoThrow', Throws', Throwing')
+       (NoThrow', Throws', Throwing', MkEnvelope(..))
 import Servant.Checked.Exceptions.Internal.Util (Snoc)
 
 -- TODO: Make sure to also account for when headers are being used.
@@ -119,7 +117,7 @@ class CreateRespBodiesFor (envel :: [*] -> * -> *) list ctypes where
     -> [(Text, MediaType, ByteString)]
 
 -- | An empty list of types has no samples.
-instance CreateRespBodiesFor Envelope '[] ctypes where
+instance CreateRespBodiesFor (envel :: [*] -> * -> *) '[] ctypes where
   createRespBodiesFor
     :: Proxy envel
     -> Proxy '[]
@@ -129,31 +127,32 @@ instance CreateRespBodiesFor Envelope '[] ctypes where
 
 -- | Create a response body for each of the error types.
 instance
-       ( AllMimeRender ctypes (Envelope '[e] ())
-       , CreateRespBodiesFor Envelope es ctypes
+       ( AllMimeRender ctypes (envel '[e] ())
+       , CreateRespBodiesFor envel es ctypes
        , ToSample e
+       , MkEnvelope envel
        )
-    => CreateRespBodiesFor Envelope (e ': es) ctypes where
+    => CreateRespBodiesFor (envel :: [*] -> * -> *) (e ': es) ctypes where
   createRespBodiesFor
     :: Proxy envel
     -> Proxy (e ': es)
     -> Proxy ctypes
     -> [(Text, MediaType, ByteString)]
   createRespBodiesFor Proxy Proxy ctypes =
-    createRespBodyFor (Proxy :: Proxy e) ctypes <>
-    createRespBodiesFor (Proxy :: Proxy Envelope) (Proxy :: Proxy es) ctypes
+    createRespBodyFor (Proxy :: Proxy envel) (Proxy :: Proxy e) ctypes <>
+    createRespBodiesFor (Proxy :: Proxy envel) (Proxy :: Proxy es) ctypes
 
 -- | Create a sample for a given @e@ under given @ctypes@.
 createRespBodyFor
-  :: forall e ctypes.
-     (AllMimeRender ctypes (Envelope '[e] ()), ToSample e)
-  => Proxy e -> Proxy ctypes -> [(Text, MediaType, ByteString)]
-createRespBodyFor Proxy ctypes = concatMap enc samples
+  :: forall (envel :: [*] -> * -> *) e ctypes.
+     (AllMimeRender ctypes (envel '[e] ()), ToSample e, MkEnvelope envel)
+  => Proxy envel -> Proxy e -> Proxy ctypes -> [(Text, MediaType, ByteString)]
+createRespBodyFor Proxy Proxy ctypes = concatMap enc samples
     where
-      samples :: [(Text, Envelope '[e] ())]
-      samples = fmap toErrEnvelope <$> toSamples (Proxy :: Proxy e)
+      samples :: [(Text, envel '[e] ())]
+      samples = fmap mkErrEnvelope <$> toSamples (Proxy :: Proxy e)
 
-      enc :: (Text, Envelope '[e] ()) -> [(Text, MediaType, ByteString)]
+      enc :: (Text, envel '[e] ()) -> [(Text, MediaType, ByteString)]
       enc (t, s) = uncurry (t,,) <$> allMimeRender ctypes s
 
 -- | We can generate a sample of an @'Envelope' es a@ as long as there is a way
@@ -161,6 +160,6 @@ createRespBodyFor Proxy ctypes = concatMap enc samples
 --
 -- This doesn't need to worry about generating a sample of @es@, because that is
 -- taken care of in the 'HasDocs' instance for @'Throwing' es@.
-instance ToSample a => ToSample (Envelope es a) where
-  toSamples :: Proxy (Envelope es a) -> [(Text, Envelope es a)]
-  toSamples Proxy = fmap toSuccEnvelope <$> toSamples (Proxy :: Proxy a)
+instance (ToSample a, MkEnvelope envel) => ToSample ((envel :: [*] -> * -> *) es a) where
+  toSamples :: Proxy (envel es a) -> [(Text, envel es a)]
+  toSamples Proxy = fmap mkSuccEnvelope <$> toSamples (Proxy :: Proxy a)

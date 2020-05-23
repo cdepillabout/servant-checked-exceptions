@@ -31,7 +31,7 @@ import Data.Functor.Identity (Identity (Identity))
 import Data.WorldPeace (OpenUnion, Union (That, This))
 
 import Servant.Checked.Exceptions.Internal.Util (Snoc)
-import Servant.Checked.Exceptions.Internal.Envelope (Envelope, envelope)
+import Servant.Checked.Exceptions.Internal.Envelope (Envelope, envelope, toSuccEnvelope, toErrEnvelope)
 
 -- | 'Throws' is used in Servant API definitions and signifies that an API will
 -- throw the given error.
@@ -45,6 +45,7 @@ import Servant.Checked.Exceptions.Internal.Envelope (Envelope, envelope)
 -- @Throws@ is a specialized case for @Throws'@, that accepts an additional
 -- envelope parameter @envel@. For @Throws@ this is @Envelope@.
 -- All combinators with a prime are polymorphic in the envelope.
+-- For an example of a custom envelope, take a look at 'Servant.Checked.Exceptions.Internal.FlatEnvelope'
 type Throws (e :: *) = Throws' Envelope e
 data Throws' (env :: [*] -> * -> *) (e :: *)
 
@@ -104,6 +105,15 @@ instance AllErrStatus es => EnvelopeStatus es Envelope where
 getErrStatus :: AllErrStatus es => OpenUnion es -> Status
 getErrStatus (This (Identity e)) = toErrStatus e
 getErrStatus (That es)           = getErrStatus es
+
+-- | Create an envelope from success or error values.
+class MkEnvelope (envel :: [*] -> * -> *) where
+  mkSuccEnvelope :: a -> envel es a
+  mkErrEnvelope :: e -> envel '[e] a
+
+instance MkEnvelope Envelope where
+  mkSuccEnvelope = toSuccEnvelope
+  mkErrEnvelope = toErrEnvelope
 
 -- $setup
 -- >>> :set -XDataKinds
