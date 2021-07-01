@@ -1,6 +1,11 @@
+
+## 2.2.0.1
+
+*   Disable doctests for GHC-9. [#39](https://github.com/cdepillabout/servant-checked-exceptions/issues/39)
+
 ## 2.2.0.0
 
-*   Add the `EnvelopeT` monad transformer. [#32]
+*   Add the `EnvelopeT` monad transformer. [#32](https://github.com/cdepillabout/servant-checked-exceptions/pull/32)
 
 *   Add a few combinators for `Envelope`:
 
@@ -10,7 +15,7 @@
     - `liftA2Envelope`
     - `bindEnvelope`
 
-    [#32]
+    [#32](https://github.com/cdepillabout/servant-checked-exceptions/pull/32)
 
 ## 2.1.0.0
 

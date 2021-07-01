@@ -1,6 +1,11 @@
+
+## 2.2.0.1
+
+*   Fix small import problem in the tests. [#38](https://github.com/cdepillabout/servant-checked-exceptions/pull/38)
+
 ## 2.2.0.0
 
-*   Add the `EnvelopeT` monad transformer. [#32]
+*   Add the `EnvelopeT` monad transformer. [#32](https://github.com/cdepillabout/servant-checked-exceptions/pull/32)
 
 *   Add a few combinators for `Envelope`:
 
@@ -10,10 +15,10 @@
     - `liftA2Envelope`
     - `bindEnvelope`
 
-    [#32]
+    [#32](https://github.com/cdepillabout/servant-checked-exceptions/pull/32)
 
 *   Add an example of using `EnvelopeT` in
-    `servant-checked-exceptions/example/EnvelopeT.hs`. [#32]
+    `servant-checked-exceptions/example/EnvelopeT.hs`. [#32](https://github.com/cdepillabout/servant-checked-exceptions/pull/32)
 
 ## 2.1.0.0
 

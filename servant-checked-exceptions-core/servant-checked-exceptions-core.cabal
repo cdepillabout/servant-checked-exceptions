@@ -1,5 +1,5 @@
 name:                servant-checked-exceptions-core
-version:             2.2.0.0
+version:             2.2.0.1
 synopsis:            Checked exceptions for Servant APIs.
 description:         Please see <https://github.com/cdepillabout/servant-checked-exceptions#readme README.md>.
 homepage:            https://github.com/cdepillabout/servant-checked-exceptions
