@@ -7,6 +7,7 @@ module Servant.Checked.Exceptions.Verbs (
   , DeleteWithErr
   , PatchWithErr
   , VerbWithErr
+  , VerbWithErr'
   -- **** HTTP 201
   , PostCreatedWithErr
   -- **** HTTP 202

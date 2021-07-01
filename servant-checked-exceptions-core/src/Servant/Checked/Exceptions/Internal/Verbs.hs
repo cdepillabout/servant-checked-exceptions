@@ -25,45 +25,55 @@ import Data.Typeable (Typeable)
 import GHC.Generics (Generic)
 import GHC.TypeLits (Nat)
 import Network.HTTP.Types (StdMethod(DELETE, GET, PATCH, POST, PUT))
+import Servant.Checked.Exceptions.Internal.Envelope (Envelope)
 
-data VerbWithErr
+data VerbWithErr'
+    (method :: k1)
+    (successStatusCode :: Nat)
+    (contentTypes :: [*])
+    (envel :: [*] -> * -> *)
+    (es :: [*])
+    a
+  deriving (Generic, Typeable)
+type VerbWithErr
     (method :: k1)
     (successStatusCode :: Nat)
     (contentTypes :: [*])
     (es :: [*])
     a
-  deriving (Generic, Typeable)
+ = VerbWithErr' method successStatusCode contentTypes Envelope es a
 
-type GetWithErr    = VerbWithErr 'GET    200
-type PostWithErr   = VerbWithErr 'POST   200
-type PutWithErr    = VerbWithErr 'PUT    200
-type DeleteWithErr = VerbWithErr 'DELETE 200
-type PatchWithErr  = VerbWithErr 'PATCH  200
+-- (contentTypes :: [*]) (es :: [*]) a
+type GetWithErr    (contentTypes :: [*]) (es :: [*]) a = VerbWithErr 'GET    200 contentTypes es a
+type PostWithErr   (contentTypes :: [*]) (es :: [*]) a = VerbWithErr 'POST   200 contentTypes es a
+type PutWithErr    (contentTypes :: [*]) (es :: [*]) a = VerbWithErr 'PUT    200 contentTypes es a
+type DeleteWithErr (contentTypes :: [*]) (es :: [*]) a = VerbWithErr 'DELETE 200 contentTypes es a
+type PatchWithErr  (contentTypes :: [*]) (es :: [*]) a = VerbWithErr 'PATCH  200 contentTypes es a
 
-type PostCreatedWithErr = VerbWithErr 'POST 201
+type PostCreatedWithErr (contentTypes :: [*]) (es :: [*]) a = VerbWithErr 'POST 201 contentTypes es a
 
-type GetAcceptedWithErr    = VerbWithErr 'GET 202
-type PostAcceptedWithErr   = VerbWithErr 'POST 202
-type DeleteAcceptedWithErr = VerbWithErr 'DELETE 202
-type PatchAcceptedWithErr  = VerbWithErr 'PATCH 202
-type PutAcceptedWithErr    = VerbWithErr 'PUT 202
+type GetAcceptedWithErr    (contentTypes :: [*]) (es :: [*]) a = VerbWithErr 'GET 202 contentTypes es a
+type PostAcceptedWithErr   (contentTypes :: [*]) (es :: [*]) a = VerbWithErr 'POST 202 contentTypes es a
+type DeleteAcceptedWithErr (contentTypes :: [*]) (es :: [*]) a = VerbWithErr 'DELETE 202 contentTypes es a
+type PatchAcceptedWithErr  (contentTypes :: [*]) (es :: [*]) a = VerbWithErr 'PATCH 202 contentTypes es a
+type PutAcceptedWithErr    (contentTypes :: [*]) (es :: [*]) a = VerbWithErr 'PUT 202 contentTypes es a
 
-type GetNonAuthoritativeWithErr    = VerbWithErr 'GET 203
-type PostNonAuthoritativeWithErr   = VerbWithErr 'POST 203
-type DeleteNonAuthoritativeWithErr = VerbWithErr 'DELETE 203
-type PatchNonAuthoritativeWithErr  = VerbWithErr 'PATCH 203
-type PutNonAuthoritativeWithErr    = VerbWithErr 'PUT 203
+type GetNonAuthoritativeWithErr    (contentTypes :: [*]) (es :: [*]) a = VerbWithErr 'GET 203 contentTypes es a
+type PostNonAuthoritativeWithErr   (contentTypes :: [*]) (es :: [*]) a = VerbWithErr 'POST 203 contentTypes es a
+type DeleteNonAuthoritativeWithErr (contentTypes :: [*]) (es :: [*]) a = VerbWithErr 'DELETE 203 contentTypes es a
+type PatchNonAuthoritativeWithErr  (contentTypes :: [*]) (es :: [*]) a = VerbWithErr 'PATCH 203 contentTypes es a
+type PutNonAuthoritativeWithErr    (contentTypes :: [*]) (es :: [*]) a = VerbWithErr 'PUT 203 contentTypes es a
 
-type GetNoContentWithErr    = VerbWithErr 'GET 204
-type PostNoContentWithErr   = VerbWithErr 'POST 204
-type DeleteNoContentWithErr = VerbWithErr 'DELETE 204
-type PatchNoContentWithErr  = VerbWithErr 'PATCH 204
-type PutNoContentWithErr    = VerbWithErr 'PUT 204
+type GetNoContentWithErr    (contentTypes :: [*]) (es :: [*]) a = VerbWithErr 'GET 204 contentTypes es a
+type PostNoContentWithErr   (contentTypes :: [*]) (es :: [*]) a = VerbWithErr 'POST 204 contentTypes es a
+type DeleteNoContentWithErr (contentTypes :: [*]) (es :: [*]) a = VerbWithErr 'DELETE 204 contentTypes es a
+type PatchNoContentWithErr  (contentTypes :: [*]) (es :: [*]) a = VerbWithErr 'PATCH 204 contentTypes es a
+type PutNoContentWithErr    (contentTypes :: [*]) (es :: [*]) a = VerbWithErr 'PUT 204 contentTypes es a
 
-type GetResetContentWithErr    = VerbWithErr 'GET 205
-type PostResetContentWithErr   = VerbWithErr 'POST 205
-type DeleteResetContentWithErr = VerbWithErr 'DELETE 205
-type PatchResetContentWithErr  = VerbWithErr 'PATCH 205
-type PutResetContentWithErr    = VerbWithErr 'PUT 205
+type GetResetContentWithErr    (contentTypes :: [*]) (es :: [*]) a = VerbWithErr 'GET 205 contentTypes es a
+type PostResetContentWithErr   (contentTypes :: [*]) (es :: [*]) a = VerbWithErr 'POST 205 contentTypes es a
+type DeleteResetContentWithErr (contentTypes :: [*]) (es :: [*]) a = VerbWithErr 'DELETE 205 contentTypes es a
+type PatchResetContentWithErr  (contentTypes :: [*]) (es :: [*]) a = VerbWithErr 'PATCH 205 contentTypes es a
+type PutResetContentWithErr    (contentTypes :: [*]) (es :: [*]) a = VerbWithErr 'PUT 205 contentTypes es a
 
-type GetPartialContentWithErr = VerbWithErr 'GET 206
+type GetPartialContentWithErr (contentTypes :: [*]) (es :: [*]) a = VerbWithErr 'GET 206 contentTypes es a

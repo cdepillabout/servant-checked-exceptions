@@ -26,6 +26,7 @@ library
                      , Servant.Checked.Exceptions.Internal
                      , Servant.Checked.Exceptions.Internal.Envelope
                      , Servant.Checked.Exceptions.Internal.EnvelopeT
+                     , Servant.Checked.Exceptions.Internal.FlatEnvelope
                      , Servant.Checked.Exceptions.Internal.Prism
                      , Servant.Checked.Exceptions.Internal.Servant
                      , Servant.Checked.Exceptions.Internal.Servant.API
