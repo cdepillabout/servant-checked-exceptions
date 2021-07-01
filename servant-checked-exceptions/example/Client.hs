@@ -25,8 +25,8 @@ import Options.Applicative
         metavar, progDesc, short, str, switch)
 import Servant.API ((:<|>)((:<|>)))
 import Servant.Client
-       (BaseUrl(BaseUrl), ClientEnv(ClientEnv), ClientM, Scheme(Http),
-        client, runClientM)
+       (BaseUrl(BaseUrl), ClientEnv, ClientM, Scheme(Http),
+        client, mkClientEnv, runClientM)
 
 import Servant.Checked.Exceptions (Envelope, emptyEnvelope, catchesEnvelope)
 
@@ -142,7 +142,7 @@ run clientEnv Options{query, useStrict = _, useNoErr = _} = runLax clientEnv que
 main :: IO ()
 main = do
   manager <- newManager defaultManagerSettings
-  let clientEnv = ClientEnv manager baseUrl Nothing
+  let clientEnv = mkClientEnv manager baseUrl
   options <- execParser opts
   run clientEnv options
   where

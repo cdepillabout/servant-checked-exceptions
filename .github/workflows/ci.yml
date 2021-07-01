@@ -1,0 +1,82 @@
+name: CI
+
+# Trigger the workflow on push or pull request, but only for the master branch
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+jobs:
+  cabal:
+    name: cabal / ghc-${{ matrix.ghc }} / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          # - macOS-latest
+        cabal:
+          - "latest"
+        ghc:
+          - "8.6.5"
+          - "8.8.4"
+          - "8.10.4"
+          - "9.0.1"
+
+    steps:
+    - uses: actions/checkout@v2
+      #if: github.event.action == 'opened' || github.event.action == 'synchronize' || github.event.ref == 'refs/heads/master'
+
+    - uses: haskell/actions/setup@v1
+      id: setup-haskell-cabal
+      name: Setup Haskell
+      with:
+        ghc-version: ${{ matrix.ghc }}
+        cabal-version: ${{ matrix.cabal }}
+
+    - uses: actions/cache@v1
+      name: Cache cabal-store
+      with:
+        path: ${{ steps.setup-haskell-cabal.outputs.cabal-store }}
+        key: ${{ runner.os }}-${{ matrix.ghc }}-cabal
+
+    - name: Build
+      run: |
+        cabal update
+        cabal build all --enable-tests --enable-benchmarks --write-ghc-environment-files=always --flags="buildexample"
+
+    - name: Test
+      run: |
+        cabal test all --enable-tests
+
+  stack:
+    name: stack / ubuntu-latest
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        stack: ["latest"]
+
+    steps:
+    - uses: actions/checkout@v2
+      #if: github.event.action == 'opened' || github.event.action == 'synchronize' || github.event.ref == 'refs/heads/master'
+
+    - uses: haskell/actions/setup@v1
+      name: Setup Haskell Stack
+      with:
+        stack-version: ${{ matrix.stack }}
+        enable-stack: true
+
+    - uses: actions/cache@v1
+      name: Cache ~/.stack
+      with:
+        path: ~/.stack
+        key: ${{ runner.os }}-${{ matrix.ghc }}-stack
+
+    - name: Build
+      run: |
+        stack build --test --bench --no-run-tests --no-run-benchmarks --flag servant-checked-exceptions:buildexample --flag servant-checked-exceptions-core:buildexample
+
+    - name: Test
+      run: |
+        stack test
+

@@ -2,7 +2,7 @@
 Servant.Checked.Exceptions
 ==========================
 
-[![Build Status](https://secure.travis-ci.org/cdepillabout/servant-checked-exceptions.svg)](http://travis-ci.org/cdepillabout/servant-checked-exceptions)
+[![Build Status](https://github.com/cdepillabout/servant-checked-exceptions/workflows/CI/badge.svg)](https://github.com/cdepillabout/servant-checked-exceptions)
 [![Hackage](https://img.shields.io/hackage/v/servant-checked-exceptions.svg)](https://hackage.haskell.org/package/servant-checked-exceptions)
 [![Stackage LTS](http://stackage.org/package/servant-checked-exceptions/badge/lts)](http://stackage.org/lts/package/servant-checked-exceptions)
 [![Stackage Nightly](http://stackage.org/package/servant-checked-exceptions/badge/nightly)](http://stackage.org/nightly/package/servant-checked-exceptions)
