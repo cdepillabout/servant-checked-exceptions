@@ -23,6 +23,7 @@ import Servant
   , ServerT
   , serve
   )
+import Test.Hspec (describe, it)
 import Test.Hspec.Wai
   ( ResponseMatcher(matchStatus)
   , get
@@ -30,7 +31,7 @@ import Test.Hspec.Wai
   , with
   )
 import Test.Tasty (TestTree, defaultMain, testGroup)
-import Test.Tasty.Hspec (describe, it, testSpec)
+import Test.Tasty.Hspec (testSpec)
 import Test.Tasty.HUnit ((@?=), assertFailure, testCase)
 
 import Servant.Checked.Exceptions
