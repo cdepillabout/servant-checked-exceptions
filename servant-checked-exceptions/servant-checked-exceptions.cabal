@@ -26,14 +26,14 @@ library
                      , Servant.Checked.Exceptions.Internal.Servant.API
                      , Servant.Checked.Exceptions.Internal.Servant.Client
                      , Servant.Checked.Exceptions.Internal.Servant.Server
-  build-depends:       base >= 4.9 && < 5
+  build-depends:       base >= 4.16 && < 5
                      , bytestring
                      , http-types
-                     , servant >= 0.16
+                     , servant >= 0.19
                      , servant-checked-exceptions-core >= 2.2.0.0
-                     , servant-client >= 0.16
-                     , servant-client-core >= 0.16
-                     , servant-server >= 0.16
+                     , servant-client >= 0.19
+                     , servant-client-core >= 0.19
+                     , servant-server >= 0.19
                      , wai
                      , world-peace >= 1.0.0.0
   default-language:    Haskell2010
@@ -53,7 +53,7 @@ executable servant-checked-exceptions-example-client
                      , optparse-applicative
                      , servant
                      , servant-checked-exceptions
-                     , servant-client >= 0.13
+                     , servant-client
                      , text
   default-language:    Haskell2010
   ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
