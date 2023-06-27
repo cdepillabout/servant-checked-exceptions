@@ -3,7 +3,7 @@
 # Specifies the GHC version and set of packages available (e.g., lts-3.5, nightly-2015-09-21, ghc-7.10.2)
 #
 # nightly is used here so we get servant-0.16.
-resolver: lts-18.0
+resolver: lts-20.26
 
 # Local packages, usually specified by relative directory name
 packages:
