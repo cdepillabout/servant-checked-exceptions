@@ -32,7 +32,7 @@ library
                      , Servant.Checked.Exceptions.Internal.Servant.Docs
                      , Servant.Checked.Exceptions.Internal.Util
                      , Servant.Checked.Exceptions.Internal.Verbs
-  build-depends:       base >= 4.9 && < 5
+  build-depends:       base >= 4.16 && < 5
                      , aeson
                      , bytestring
                        -- contravariant is needed for the Data.Functor.Contravariant module in GHC < 8.6
@@ -43,8 +43,8 @@ library
                      , profunctors
                      , tagged
                      , transformers
-                     , servant >= 0.12
-                     , servant-docs >= 0.10
+                     , servant >= 0.19
+                     , servant-docs >= 0.12
                      , text
                      , world-peace >= 1.0.0.0
   default-language:    Haskell2010
