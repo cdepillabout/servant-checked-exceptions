@@ -101,13 +101,16 @@ module Servant.Checked.Exceptions
   -- * Servant Types
   -- ** 'Throws' API parameter
     Throws
+  , Throws'
   -- ** 'NoThrow' API parameter
   , NoThrow
+  , NoThrow'
   -- ** HTTP Error Status Code
   , ErrStatus(toErrStatus)
   , Status
   -- ** Verbs
   , VerbWithErr
+  , VerbWithErr'
   -- *** Specialized Verbs
   -- **** HTTP 200
   , GetWithErr
@@ -145,6 +148,7 @@ module Servant.Checked.Exceptions
   , GetPartialContentWithErr
   -- * 'Envelope' response wrapper
   , Envelope(..)
+  , FlatEnvelope(..)
   -- ** 'Envelope' helper functions
   -- *** 'Envelope' constructors
   , toSuccEnvelope

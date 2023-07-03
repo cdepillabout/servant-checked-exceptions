@@ -29,10 +29,8 @@ module Servant.Checked.Exceptions.Internal.Servant.Server where
 
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as LBS
-import Data.Functor.Identity
 import Data.Maybe
 import Data.Proxy (Proxy(Proxy))
-import Data.WorldPeace (OpenUnion, Union(That, This))
 import GHC.TypeLits (KnownNat, natVal)
 import Network.HTTP.Types
 import Network.Wai
@@ -67,151 +65,150 @@ import Servant
   , reflectMethod
   )
 
-import Servant.Checked.Exceptions.Internal.Envelope (Envelope, envelope)
 import Servant.Checked.Exceptions.Internal.Servant.API
   ( AllErrStatus
-  , ErrStatus(toErrStatus)
-  , NoThrow
-  , Throwing
+  , EnvelopeStatus(..)
+  , NoThrow'
+  , Throwing'
   , ThrowingNonterminal
-  , Throws
+  , Throws'
   )
-import Servant.Checked.Exceptions.Verbs (VerbWithErr)
+import Servant.Checked.Exceptions.Verbs (VerbWithErr')
 
 -- TODO: Make sure to also account for when headers are being used.
 -- This might be hard to do:
 -- https://github.com/cdepillabout/servant-checked-exceptions/issues/4
 
 -- | Change a 'Throws' into 'Throwing'.
-instance (HasServer (Throwing '[e] :> api) context) =>
-    HasServer (Throws e :> api) context where
+instance (HasServer (Throwing' envel '[e] :> api) context) =>
+    HasServer (Throws' envel e :> api) context where
 
-  type ServerT (Throws e :> api) m =
-    ServerT (Throwing '[e] :> api) m
+  type ServerT (Throws' envel e :> api) m =
+    ServerT (Throwing' envel '[e] :> api) m
 
   hoistServerWithContext _ =
-    hoistServerWithContext (Proxy :: Proxy (Throwing '[e] :> api))
+    hoistServerWithContext (Proxy :: Proxy (Throwing' envel '[e] :> api))
 
   route
-    :: Proxy (Throws e :> api)
+    :: Proxy (Throws' envel e :> api)
     -> Context context
-    -> Delayed env (ServerT (Throwing '[e] :> api) Handler)
+    -> Delayed env (ServerT (Throwing' envel '[e] :> api) Handler)
     -> Router env
-  route _ = route (Proxy :: Proxy (Throwing '[e] :> api))
+  route _ = route (Proxy :: Proxy (Throwing' envel '[e] :> api))
 
 -- | When @'Throwing' es@ comes before a 'Verb', change it into the same 'Verb'
 -- but returning an @'Envelope' es@.
-instance (HasServer (VerbWithErr method status ctypes es a) context) =>
-    HasServer (Throwing es :> Verb method status ctypes a) context where
+instance (HasServer (VerbWithErr' method status ctypes envel es a) context) =>
+    HasServer (Throwing' envel es :> Verb method status ctypes a) context where
 
-  type ServerT (Throwing es :> Verb method status ctypes a) m =
-    ServerT (VerbWithErr method status ctypes es a) m
+  type ServerT (Throwing' envel es :> Verb method status ctypes a) m =
+    ServerT (VerbWithErr' method status ctypes envel es a) m
 
   hoistServerWithContext _ =
-    hoistServerWithContext (Proxy :: Proxy (VerbWithErr method status ctypes es a))
+    hoistServerWithContext (Proxy :: Proxy (VerbWithErr' method status ctypes envel es a))
 
   route
-    :: Proxy (Throwing es :> Verb method status ctypes a)
+    :: Proxy (Throwing' envel es :> Verb method status ctypes a)
     -> Context context
     -> Delayed env
-         (ServerT (VerbWithErr method status ctypes es a) Handler)
+         (ServerT (VerbWithErr' method status ctypes envel es a) Handler)
     -> Router env
   route _ =
     route
-      (Proxy :: Proxy (VerbWithErr method status ctypes es a))
+      (Proxy :: Proxy (VerbWithErr' method status ctypes envel es a))
 
 -- | When 'NoThrow' comes before a 'Verb', change it into the same 'Verb'
 -- but returning an @'Envelope' \'[]@.
 instance
-    ( HasServer (VerbWithErr method status ctypes '[] a) context
+    ( HasServer (VerbWithErr' method status ctypes envel '[] a) context
     ) =>
-    HasServer (NoThrow :> Verb method status ctypes a) context where
+    HasServer (NoThrow' envel :> Verb method status ctypes a) context where
 
-  type ServerT (NoThrow :> Verb method status ctypes a) m =
-    ServerT (VerbWithErr method status ctypes '[] a) m
+  type ServerT (NoThrow' envel :> Verb method status ctypes a) m =
+    ServerT (VerbWithErr' method status ctypes envel '[] a) m
 
   hoistServerWithContext _ =
-    hoistServerWithContext (Proxy :: Proxy (VerbWithErr method status ctypes '[] a))
+    hoistServerWithContext (Proxy :: Proxy (VerbWithErr' method status ctypes envel '[] a))
 
   route
-    :: Proxy (NoThrow :> Verb method status ctypes a)
+    :: Proxy (NoThrow' envel :> Verb method status ctypes a)
     -> Context context
-    -> Delayed env (ServerT (VerbWithErr method status ctypes '[] a) Handler)
+    -> Delayed env (ServerT (VerbWithErr' method status ctypes envel '[] a) Handler)
     -> Router env
-  route _ = route (Proxy :: Proxy (VerbWithErr method status ctypes '[] a))
+  route _ = route (Proxy :: Proxy (VerbWithErr' method status ctypes envel '[] a))
 
 -- | When @'Throwing' es@ comes before ':<|>', push @'Throwing' es@ into each
 -- branch of the API.
-instance HasServer ((Throwing es :> api1) :<|> (Throwing es :> api2)) context =>
-    HasServer (Throwing es :> (api1 :<|> api2)) context where
+instance HasServer ((Throwing' envel es :> api1) :<|> (Throwing' envel es :> api2)) context =>
+    HasServer (Throwing' envel es :> (api1 :<|> api2)) context where
 
-  type ServerT (Throwing es :> (api1 :<|> api2)) m =
-    ServerT ((Throwing es :> api1) :<|> (Throwing es :> api2)) m
+  type ServerT (Throwing' envel es :> (api1 :<|> api2)) m =
+    ServerT ((Throwing' envel es :> api1) :<|> (Throwing' envel es :> api2)) m
 
   hoistServerWithContext _ =
-    hoistServerWithContext (Proxy :: Proxy ((Throwing es :> api1) :<|> (Throwing es :> api2)))
+    hoistServerWithContext (Proxy :: Proxy ((Throwing' envel es :> api1) :<|> (Throwing' envel es :> api2)))
 
   route
-    :: Proxy (Throwing es :> (api1 :<|> api2))
+    :: Proxy (Throwing' envel es :> (api1 :<|> api2))
     -> Context context
-    -> Delayed env (ServerT ((Throwing es :> api1) :<|> (Throwing es :> api2)) Handler)
+    -> Delayed env (ServerT ((Throwing' envel es :> api1) :<|> (Throwing' envel es :> api2)) Handler)
     -> Router env
-  route _ = route (Proxy :: Proxy ((Throwing es :> api1) :<|> (Throwing es :> api2)))
+  route _ = route (Proxy :: Proxy ((Throwing' envel es :> api1) :<|> (Throwing' envel es :> api2)))
 
 -- | When 'NoThrow' comes before ':<|>', push 'NoThrow' into each
 -- branch of the API.
-instance HasServer ((NoThrow :> api1) :<|> (NoThrow :> api2)) context =>
-    HasServer (NoThrow :> (api1 :<|> api2)) context where
+instance HasServer ((NoThrow' envel :> api1) :<|> (NoThrow' envel :> api2)) context =>
+    HasServer (NoThrow' envel :> (api1 :<|> api2)) context where
 
-  type ServerT (NoThrow :> (api1 :<|> api2)) m =
-    ServerT ((NoThrow :> api1) :<|> (NoThrow :> api2)) m
+  type ServerT (NoThrow' envel :> (api1 :<|> api2)) m =
+    ServerT ((NoThrow' envel :> api1) :<|> (NoThrow' envel :> api2)) m
 
   hoistServerWithContext _ =
-    hoistServerWithContext (Proxy :: Proxy ((NoThrow :> api1) :<|> (NoThrow :> api2)))
+    hoistServerWithContext (Proxy :: Proxy ((NoThrow' envel :> api1) :<|> (NoThrow' envel :> api2)))
 
   route
-    :: Proxy (NoThrow :> (api1 :<|> api2))
+    :: Proxy (NoThrow' envel :> (api1 :<|> api2))
     -> Context context
-    -> Delayed env (ServerT ((NoThrow :> api1) :<|> (NoThrow :> api2)) Handler)
+    -> Delayed env (ServerT ((NoThrow' envel :> api1) :<|> (NoThrow' envel :> api2)) Handler)
     -> Router env
-  route _ = route (Proxy :: Proxy ((NoThrow :> api1) :<|> (NoThrow :> api2)))
+  route _ = route (Proxy :: Proxy ((NoThrow' envel :> api1) :<|> (NoThrow' envel :> api2)))
 
 -- | When a @'Throws' e@ comes immediately after a @'Throwing' es@, 'Snoc' the
 -- @e@ onto the @es@. Otherwise, if @'Throws' e@ comes before any other
 -- combinator, push it down so it is closer to the 'Verb'.
-instance HasServer (ThrowingNonterminal (Throwing es :> api :> apis)) context =>
-    HasServer (Throwing es :> api :> apis) context where
+instance HasServer (ThrowingNonterminal (Throwing' envel es :> api :> apis)) context =>
+    HasServer (Throwing' envel es :> api :> apis) context where
 
-  type ServerT (Throwing es :> api :> apis) m =
-    ServerT (ThrowingNonterminal (Throwing es :> api :> apis)) m
+  type ServerT (Throwing' envel es :> api :> apis) m =
+    ServerT (ThrowingNonterminal (Throwing' envel es :> api :> apis)) m
 
   hoistServerWithContext _ =
-    hoistServerWithContext (Proxy :: Proxy (ThrowingNonterminal (Throwing es :> api :> apis)))
+    hoistServerWithContext (Proxy :: Proxy (ThrowingNonterminal (Throwing' envel es :> api :> apis)))
 
   route
-    :: Proxy (Throwing es :> api :> apis)
+    :: Proxy (Throwing' envel es :> api :> apis)
     -> Context context
-    -> Delayed env (ServerT (ThrowingNonterminal (Throwing es :> api :> apis)) Handler)
+    -> Delayed env (ServerT (ThrowingNonterminal (Throwing' envel es :> api :> apis)) Handler)
     -> Router env
-  route _ = route (Proxy :: Proxy (ThrowingNonterminal (Throwing es :> api :> apis)))
+  route _ = route (Proxy :: Proxy (ThrowingNonterminal (Throwing' envel es :> api :> apis)))
 
 -- | When 'NoThrow' comes before any combinator, push it down so it is closer
 -- to the 'Verb'.
-instance HasServer (api :> NoThrow :> apis) context =>
-    HasServer (NoThrow :> api :> apis) context where
+instance HasServer (api :> NoThrow' envel :> apis) context =>
+    HasServer (NoThrow' envel :> api :> apis) context where
 
-  type ServerT (NoThrow :> api :> apis) m =
-    ServerT (api :> NoThrow :> apis) m
+  type ServerT (NoThrow' envel :> api :> apis) m =
+    ServerT (api :> NoThrow' envel :> apis) m
 
   hoistServerWithContext _ =
-    hoistServerWithContext (Proxy :: Proxy (api :> NoThrow :> apis))
+    hoistServerWithContext (Proxy :: Proxy (api :> NoThrow' envel :> apis))
 
   route
-    :: Proxy (NoThrow :> api :> apis)
+    :: Proxy (NoThrow' envel :> api :> apis)
     -> Context context
-    -> Delayed env (ServerT (api :> NoThrow :> apis) Handler)
+    -> Delayed env (ServerT (api :> NoThrow' envel :> apis) Handler)
     -> Router env
-  route _ = route (Proxy :: Proxy (api :> NoThrow :> apis))
+  route _ = route (Proxy :: Proxy (api :> NoThrow' envel :> apis))
 
 ---------------------
 -- Verb With Error --
@@ -219,22 +216,23 @@ instance HasServer (api :> NoThrow :> apis) context =>
 
 instance
     {-# OVERLAPPABLE #-}
-    ( AllCTRender ctypes (Envelope es a)
+    ( AllCTRender ctypes (envel es a)
     , AllErrStatus es
     , KnownNat successStatus
     , ReflectMethod method
+    , EnvelopeStatus es envel
     ) =>
-    HasServer (VerbWithErr method successStatus ctypes es a) context where
+    HasServer (VerbWithErr' method successStatus ctypes envel es a) context where
 
-  type ServerT (VerbWithErr method successStatus ctypes es a) m =
-    m (Envelope es a)
+  type ServerT (VerbWithErr' method successStatus ctypes envel es a) m =
+    m (envel es a)
 
   hoistServerWithContext _ _ nt = nt
 
   route
-    :: Proxy (VerbWithErr method successStatus ctypes es a)
+    :: Proxy (VerbWithErr' method successStatus ctypes envel es a)
     -> Context context
-    -> Delayed env (Handler (Envelope es a))
+    -> Delayed env (Handler (envel es a))
     -> Router' env
          ( Request ->
            (RouteResult Response -> IO ResponseReceived) ->
@@ -250,12 +248,12 @@ instance
         toEnum . fromInteger $ natVal (Proxy :: Proxy successStatus)
 
 methodRouter ::
-     forall ctypes a es env.
-     (AllCTRender ctypes (Envelope es a), AllErrStatus es)
+     forall ctypes a envel es env.
+     (AllCTRender ctypes (envel es a), AllErrStatus es, EnvelopeStatus es envel)
   => Method
   -> Status
   -> Proxy ctypes
-  -> Delayed env (Handler (Envelope es a))
+  -> Delayed env (Handler (envel es a))
   -> Router' env
        ( Request ->
          (RouteResult Response -> IO ResponseReceived)->
@@ -276,9 +274,9 @@ methodRouter method successStatus proxy action = leafRouter route'
               `addAcceptCheck` acceptCheck proxy accH
       runAction theAction env request respond $ go request accH
 
-    go :: Request -> ByteString -> Envelope es a -> RouteResult Response
+    go :: Request -> ByteString -> envel es a -> RouteResult Response
     go request accH envel = do
-      let status = envelope getErrStatus (const successStatus) envel
+      let status = getEnvelopeStatus envel successStatus
       let handleA = handleAcceptH proxy (AcceptHeader accH) envel
       processMethodRouter handleA status method Nothing request
 
@@ -299,10 +297,6 @@ acceptCheck :: (AllMime list) => Proxy list -> ByteString -> DelayedIO ()
 acceptCheck proxy accH
   | canHandleAcceptH proxy (AcceptHeader accH) = return ()
   | otherwise                                  = delayedFail err406
-
-getErrStatus :: AllErrStatus es => OpenUnion es -> Status
-getErrStatus (This (Identity e)) = toErrStatus e
-getErrStatus (That es) = getErrStatus es
 
 processMethodRouter
   :: Maybe (LBS.ByteString, LBS.ByteString)
